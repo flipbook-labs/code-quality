@@ -6,15 +6,15 @@ The house Luau style is written down as prose in [agent-skills](https://github.c
 
 ## Rules
 
-| Rule | What it asks for |
-| --- | --- |
-| `explicit_instantiation` | `useState<<string?>>(nil)` instead of casting a literal argument, as in `useState(nil :: string?)` |
-| `function_type_param_names` | Named parameters in function types: `(storyModule: ModuleScript) -> ()` |
-| `inline_table` | One field per line once a table has more than two keyed fields |
-| `no_any` | `unknown` instead of `any` |
-| `no_error_field` | Error fields named `err` or `problem`, not `error` |
-| `string_method_call` | `value:find(...)` instead of `string.find(value, ...)` |
-| `tostring_in_interpolation` | `` `got {value}` `` instead of `` `got {tostring(value)}` `` |
+| Rule                        | What it asks for                                                                                   |
+| --------------------------- | -------------------------------------------------------------------------------------------------- |
+| `explicit_instantiation`    | `useState<<string?>>(nil)` instead of casting a literal argument, as in `useState(nil :: string?)` |
+| `function_type_param_names` | Named parameters in function types: `(storyModule: ModuleScript) -> ()`                            |
+| `inline_table`              | One field per line once a table has more than two keyed fields                                     |
+| `no_any`                    | `unknown` instead of `any`                                                                         |
+| `no_error_field`            | Error fields named `err` or `problem`, not `error`                                                 |
+| `string_method_call`        | `value:find(...)` instead of `string.find(value, ...)`                                             |
+| `tostring_in_interpolation` | `` `got {value}` `` instead of `` `got {tostring(value)}` ``                                       |
 
 Every rule reports at warning severity. `no_any`, `tostring_in_interpolation`, and single-argument `explicit_instantiation` calls come with fixes that `lute lint --auto-fix` applies.
 
