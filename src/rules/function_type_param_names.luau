@@ -3,6 +3,7 @@ local query = require("@std/syntax/query")
 local syntax = require("@std/syntax")
 local utils = require("@std/syntax/utils")
 
+local getReportLocation = require("../lib/getReportLocation")
 local types = require("../types")
 
 local NAME = "function_type_param_names"
@@ -23,7 +24,7 @@ local function lint(cst: syntax.CstStatBlock, sourcepath: path.Path?): { types.L
 		:mapToArray(function(functionType): types.LintViolation?
 			return {
 				lintname = NAME,
-				location = functionType.location,
+				location = getReportLocation(cst, functionType.location),
 				message = "Name the parameters in function types, as in `(storyModule: ModuleScript) -> ()`, so the type reads as a signature.",
 				severity = "warning",
 				sourcepath = sourcepath,

@@ -3,6 +3,7 @@ local query = require("@std/syntax/query")
 local syntax = require("@std/syntax")
 local utils = require("@std/syntax/utils")
 
+local getReportLocation = require("../lib/getReportLocation")
 local types = require("../types")
 
 local NAME = "no_error_field"
@@ -33,7 +34,7 @@ local function lint(cst: syntax.CstStatBlock, sourcepath: path.Path?): { types.L
 	query.findAllFromRoot(cst, utils.isTypeTable):forEach(function(tableType)
 		for _, entry in tableType.entries do
 			if entry.kind == "property" and entry.key.text == "error" then
-				table.insert(violations, createViolation(entry.key.location, sourcepath))
+				table.insert(violations, createViolation(getReportLocation(cst, entry.key.location), sourcepath))
 			end
 		end
 	end)

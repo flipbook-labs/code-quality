@@ -3,6 +3,7 @@ local query = require("@std/syntax/query")
 local syntax = require("@std/syntax")
 local utils = require("@std/syntax/utils")
 
+local getReportLocation = require("../lib/getReportLocation")
 local types = require("../types")
 
 local NAME = "no_any"
@@ -16,11 +17,12 @@ local function lint(cst: syntax.CstStatBlock, sourcepath: path.Path?): { types.L
 		:mapToArray(function(reference): types.LintViolation?
 			return {
 				lintname = NAME,
-				location = reference.location,
+				location = getReportLocation(cst, reference.location),
 				message = "Prefer `unknown` over `any`. `unknown` keeps type checking on and makes callers narrow the value before using it.",
 				severity = "warning",
 				sourcepath = sourcepath,
 				suggestedfix = {
+					location = reference.location,
 					fix = "unknown",
 				},
 			}
