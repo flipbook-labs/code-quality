@@ -1,4 +1,5 @@
--- Checks formatting with StyLua and lints with Selene.
+-- Checks formatting with StyLua and lints with Selene, then runs this
+-- package's own rules over itself.
 
 local process = require("@std/process")
 
@@ -11,5 +12,6 @@ local function run(command: { string })
 	end
 end
 
-run({ "stylua", "--check", ".lute" })
-run({ "selene", ".lute" })
+run({ "stylua", "--check", ".lute", "src", "tests" })
+run({ "selene", ".lute", "src", "tests" })
+run({ "lute", "lint", "--rules", "src/rules", ".lute", "src", "tests" })
