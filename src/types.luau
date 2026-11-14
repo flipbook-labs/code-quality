@@ -5,6 +5,8 @@
 local path = require("@std/path")
 local syntax = require("@std/syntax")
 
+-- Lute compares severities as these exact strings, so this stays a union.
+-- lute-lint-ignore(string_union_enum)
 export type Severity = "error" | "warning" | "info" | "hint"
 
 export type SuggestedFix = {

@@ -16,6 +16,14 @@ test.suite("inline_table", function(suite)
 		assert.eq(#lintSource(rule, "return { a = a, b = b, c = c }"), 1)
 	end)
 
+	suite:case("flags a returned table with a single keyed field", function(assert)
+		assert.eq(#lintSource(rule, "return { ok = true }"), 1)
+	end)
+
+	suite:case("leaves a returned list of values alone", function(assert)
+		assert.eq(#lintSource(rule, "return { a, b }"), 0)
+	end)
+
 	suite:case("leaves two keyed fields on one line alone", function(assert)
 		assert.eq(#lintSource(rule, "local t = { a = 1, b = 2 }"), 0)
 	end)

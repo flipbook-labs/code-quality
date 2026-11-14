@@ -4,6 +4,7 @@ local query = require("@std/syntax/query")
 local syntax = require("@std/syntax")
 local utils = require("@std/syntax/utils")
 
+local isLiteral = require("../lib/isLiteral")
 local types = require("../types")
 
 local NAME = "explicit_instantiation"
@@ -12,14 +13,6 @@ local NAME = "explicit_instantiation"
 -- generic function's type parameter used to be set before Luau had explicit
 -- instantiation. A cast on a literal does nothing else, so it's a reliable
 -- sign that `useState<<string?>>(nil)` is what the code means.
-local function isLiteral(expr: syntax.CstExpr): boolean
-	return utils.isExprConstantNil(expr) ~= nil
-		or utils.isExprConstantBool(expr) ~= nil
-		or utils.isExprConstantNumber(expr) ~= nil
-		or utils.isExprConstantString(expr) ~= nil
-		or utils.isExprTable(expr) ~= nil
-end
-
 local function getLiteralCast(expr: syntax.CstExpr): syntax.CstExprTypeAssertion?
 	local cast = utils.isExprTypeAssertion(expr)
 	if cast and isLiteral(cast.operand) then
