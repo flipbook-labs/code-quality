@@ -1,0 +1,8 @@
+# Luau
+sourcemap*.json
+globalTypes.d.luau
+*.lock.luau
+
+# Other
+/*.log
+.DS_Store

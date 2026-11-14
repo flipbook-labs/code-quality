@@ -1,0 +1,6 @@
+# StyLua otherwise accepts a mix of Lua dialects and rejects some Luau-only
+# syntax, such as explicit type instantiation (`f<<T>>()`).
+syntax = "Luau"
+
+[sort_requires]
+enabled = true
