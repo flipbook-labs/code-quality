@@ -9,9 +9,25 @@ local NAME = "empty_loop"
 
 type Loop = syntax.CstStatFor | syntax.CstStatForIn | syntax.CstStatWhile | syntax.CstStatRepeat
 
+-- Whether position A (line, column) comes at or before position B.
+local function isAtOrBefore(lineA: number, columnA: number, lineB: number, columnB: number): boolean
+	return lineA < lineB or (lineA == lineB and columnA <= columnB)
+end
+
+-- Whether `comment` sits in the loop's body, between `do` and `end`, or between
+-- `repeat` and `until`. Selene counts a comment anywhere in the loop, so a
+-- comment in the header, as in `while --[[ready?]] ready do end`, hid an empty
+-- body there.
+local function isInBody(loop: Loop, comment: syntax.Span): boolean
+	local opener = if loop.tag == "repeat" then loop.repeatKeyword else loop.doKeyword
+	local closer = if loop.tag == "repeat" then loop.untilKeyword else loop.endKeyword
+	return isAtOrBefore(opener.location.endLine, opener.location.endColumn, comment.beginLine, comment.beginColumn)
+		and isAtOrBefore(comment.endLine, comment.endColumn, closer.location.beginLine, closer.location.beginColumn)
+end
+
 -- Flags a loop with nothing in its body. With the `comments_count` option
--- set, a comment inside the loop counts as a body, so a loop left empty on
--- purpose can say why.
+-- set, a comment in the body counts as a body, so a loop left empty on purpose
+-- can say why.
 local function lint(
 	cst: syntax.CstStatBlock,
 	sourcepath: path.Path?,
@@ -55,7 +71,7 @@ local function lint(
 	for _, loop in emptyLoops do
 		local hasComment = false
 		for _, comment in comments do
-			if syntax.span.subsumes(loop.location, comment) then
+			if isInBody(loop, comment) then
 				hasComment = true
 				break
 			end
