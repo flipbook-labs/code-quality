@@ -3,13 +3,6 @@ local test = require("@std/test")
 local lintSource = require("./lib/lintSource")
 local rule = require("@repo/src/rules/explicit_instantiation")
 
-local function getFix(source: string): string?
-	local violations = lintSource(rule, source)
-	local violation = violations[1]
-	local fix = violation and violation.suggestedfix
-	return if fix then fix.fix else nil
-end
-
 test.suite("explicit_instantiation", function(suite)
 	suite:case("flags a cast `nil` argument", function(assert)
 		assert.eq(#lintSource(rule, "local value, setValue = useState(nil :: string?)"), 1)
@@ -36,13 +29,8 @@ test.suite("explicit_instantiation", function(suite)
 		assert.eq(#lintSource(rule, "pair(nil :: A?, nil :: B?)"), 1)
 	end)
 
-	suite:case("suggests explicit instantiation for a single argument", function(assert)
-		assert.eq(getFix("local value = React.useState(nil :: string?)"), "React.useState<<string?>>(nil)")
-		assert.eq(getFix("local items = signal({} :: { Item })"), "signal<<{ Item }>>({})")
-	end)
-
-	suite:case("offers no fix when the call has other arguments", function(assert)
-		local violations = lintSource(rule, "createStore(nil :: State?, options)")
+	suite:case("offers no fix, since the cast type may not be the type parameter", function(assert)
+		local violations = lintSource(rule, "local head = first({} :: { number })")
 		assert.eq(#violations, 1)
 		assert.eq(violations[1].suggestedfix, nil)
 	end)
