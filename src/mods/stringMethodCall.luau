@@ -45,15 +45,33 @@ local function hasComment(triviaList: { syntax.Trivia }): boolean
 	return false
 end
 
+-- Only strings have methods. `string.rep(5, 3)` works because the library
+-- turns the number into text, but `(5):rep(3)` throws. So the receiver must be
+-- something that could hold a string. A literal never does, since the rule
+-- already skips string literals. Neither does `-x`, `#x`, `not x`, or a binary
+-- expression whose result is a number or boolean, like `a + b` or `a == b`.
+-- `a .. b` is a string, and `a or b` could be one.
+local function couldBeString(expr: syntax.CstExpr): boolean
+	local inner = unwrapGroups(expr)
+	if isLiteral(inner) or utils.isExprUnary(inner) ~= nil then
+		return false
+	end
+
+	local binary = utils.isExprBinary(inner)
+	if binary then
+		local operator = binary.operator.text
+		return operator == ".." or operator == "and" or operator == "or"
+	end
+
+	return true
+end
+
 -- Whether moving the first argument in front of the call would change what
 -- the code does or lose part of it.
 local function canRewrite(call: syntax.CstExprCall): boolean
 	local receiver = call.arguments[1]
 
-	-- Only strings have methods, so `string.rep(5, 3)` works but `(5):rep(3)`
-	-- throws, and `((5)):rep(3)` throws too. A literal of any other type would
-	-- hit the same error.
-	if isLiteral(unwrapGroups(receiver)) then
+	if not couldBeString(receiver) then
 		return false
 	end
 

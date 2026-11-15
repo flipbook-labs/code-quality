@@ -73,9 +73,23 @@ test.suite("stringMethodCall code mod", function(suite)
 		assert.eq(transformSource(migration, source), source)
 	end)
 
-	suite:case("leaves a literal that isn't a string alone", function(assert)
-		local source = "local digits = string.rep(5, 3)\nlocal more = string.rep((5), 3)"
+	suite:case("leaves a receiver that can't be a string alone", function(assert)
+		local source = table.concat({
+			"local digits = string.rep(5, 3)",
+			"local grouped = string.rep((5), 3)",
+			"local negative = string.rep(-5, 3)",
+			"local size = string.rep(#items, 3)",
+			"local sum = string.rep(a + b, 3)",
+			"local same = string.rep(a == b, 3)",
+		}, "\n")
 		assert.eq(transformSource(migration, source), source)
+	end)
+
+	suite:case("rewrites a receiver that falls back to a string", function(assert)
+		assert.eq(
+			transformSource(migration, 'local name = string.lower(raw or "")'),
+			'local name = (raw or ""):lower()'
+		)
 	end)
 
 	suite:case("leaves a statement that would start with a parenthesis alone", function(assert)
