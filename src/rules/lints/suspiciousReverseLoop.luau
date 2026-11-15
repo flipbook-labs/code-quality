@@ -3,6 +3,7 @@ local query = require("@std/syntax/query")
 local syntax = require("@std/syntax")
 local utils = require("@std/syntax/utils")
 
+local getReportLocation = require("../../lib/getReportLocation")
 local types = require("../../types")
 
 local NAME = "suspicious_reverse_loop"
@@ -23,12 +24,15 @@ local function lint(cst: syntax.CstStatBlock, sourcepath: path.Path?): { types.L
 
 		return {
 			lintname = NAME,
-			location = syntax.span.create({
-				beginLine = loop.from.location.beginLine,
-				beginColumn = loop.from.location.beginColumn,
-				endLine = loop.to.location.endLine,
-				endColumn = loop.to.location.endColumn,
-			}),
+			location = getReportLocation(
+				cst,
+				syntax.span.create({
+					beginLine = loop.from.location.beginLine,
+					beginColumn = loop.from.location.beginColumn,
+					endLine = loop.to.location.endLine,
+					endColumn = loop.to.location.endColumn,
+				})
+			),
 			message = "This loop runs once at most. To count down, add `, -1` after the end value.",
 			severity = "warning",
 			sourcepath = sourcepath,

@@ -26,6 +26,13 @@ test.suite("compare_nan", function(suite)
 		assert.eq(#lintSource(rule, source), 3)
 	end)
 
+	suite:case("suggests a local for an indexed variable", function(assert)
+		local violations = lintSource(rule, "local _ = values[nextKey()] == 0/0")
+		assert.eq(#violations, 1)
+		assert.strContains(violations[1].message, "`value ~= value`")
+		assert.strNotContains(violations[1].message, "nextKey")
+	end)
+
 	suite:case("leaves other operators alone", function(assert)
 		assert.eq(#lintSource(rule, "local _ = x >= 0/0"), 0)
 		assert.eq(#lintSource(rule, "local _ = 3 + 0/0"), 0)

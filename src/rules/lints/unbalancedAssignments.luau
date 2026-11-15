@@ -3,6 +3,7 @@ local query = require("@std/syntax/query")
 local syntax = require("@std/syntax")
 local utils = require("@std/syntax/utils")
 
+local getReportLocation = require("../../lib/getReportLocation")
 local types = require("../../types")
 local unwrapGroups = require("../../lib/unwrapGroups")
 
@@ -35,6 +36,7 @@ local function spanBetween(first: syntax.Span, last: syntax.Span): syntax.Span
 end
 
 local function lintAssignment(
+	cst: syntax.CstStatBlock,
 	nameCount: number,
 	values: syntax.CstPunctuated<syntax.CstExpr>,
 	sourcepath: path.Path?
@@ -49,7 +51,7 @@ local function lintAssignment(
 	if valueCount > nameCount then
 		return {
 			lintname = NAME,
-			location = spanBetween(values[nameCount + 1].location, lastValue.location),
+			location = getReportLocation(cst, spanBetween(values[nameCount + 1].location, lastValue.location)),
 			message = "There are more values on the right side of this assignment than names on the left, so the extras are thrown away.",
 			severity = "warning",
 			sourcepath = sourcepath,
@@ -68,7 +70,7 @@ local function lintAssignment(
 
 		return {
 			lintname = NAME,
-			location = spanBetween(values[1].location, lastValue.location),
+			location = getReportLocation(cst, spanBetween(values[1].location, lastValue.location)),
 			message = message,
 			severity = "warning",
 			sourcepath = sourcepath,
@@ -88,11 +90,11 @@ local function lint(cst: syntax.CstStatBlock, sourcepath: path.Path?): { types.L
 	end
 
 	query.findAllFromRoot(cst, utils.isStatAssign):forEach(function(assign)
-		check(lintAssignment(#assign.variables, assign.values, sourcepath))
+		check(lintAssignment(cst, #assign.variables, assign.values, sourcepath))
 	end)
 
 	query.findAllFromRoot(cst, utils.isStatLocal):forEach(function(declaration)
-		check(lintAssignment(#declaration.variables, declaration.values, sourcepath))
+		check(lintAssignment(cst, #declaration.variables, declaration.values, sourcepath))
 	end)
 
 	return violations

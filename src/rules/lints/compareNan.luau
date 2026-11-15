@@ -49,11 +49,20 @@ local function lint(cst: syntax.CstStatBlock, sourcepath: path.Path?): { types.L
 			return nil
 		end
 
-		local variable = printer.printNode(binary.lhsOperand):match("^%s*(.-)%s*$")
+		local message = "Comparing a value to NaN never works, since NaN isn't equal to anything."
+		if utils.isExprGlobal(binary.lhsOperand) or utils.isExprLocal(binary.lhsOperand) then
+			local variable = printer.printNode(binary.lhsOperand):match("^%s*(.-)%s*$")
+			message ..= ` Use \`{variable} {replacement} {variable}\` instead.`
+		else
+			-- Repeating an index like `t[nextKey()]` on both sides could read two
+			-- different values, so the value goes in a local first.
+			message ..= ` Save the value in a local and compare it to itself, as in \`value {replacement} value\`.`
+		end
+
 		return {
 			lintname = NAME,
 			location = getReportLocation(cst, binary.location),
-			message = `Comparing a value to NaN never works, since NaN isn't equal to anything. Use \`{variable} {replacement} {variable}\` instead.`,
+			message = message,
 			severity = "warning",
 			sourcepath = sourcepath,
 		}

@@ -2,6 +2,7 @@ local path = require("@std/path")
 local syntax = require("@std/syntax")
 local visitorLib = require("@std/syntax/visitor")
 
+local getReportLocation = require("../../lib/getReportLocation")
 local types = require("../../types")
 
 local NAME = "empty_loop"
@@ -63,7 +64,7 @@ local function lint(
 		if not hasComment then
 			local violation: types.LintViolation = {
 				lintname = NAME,
-				location = loop.location,
+				location = getReportLocation(cst, loop.location),
 				message = "This loop's body is empty.",
 				severity = "warning",
 				sourcepath = sourcepath,
