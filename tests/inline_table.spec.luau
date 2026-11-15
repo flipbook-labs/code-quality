@@ -20,6 +20,11 @@ test.suite("inline_table", function(suite)
 		assert.eq(#lintSource(rule, "return { ok = true }"), 1)
 	end)
 
+	suite:case("flags a returned table wrapped in a cast or parentheses", function(assert)
+		assert.eq(#lintSource(rule, "return { ok = true } :: Result"), 1)
+		assert.eq(#lintSource(rule, "return ({ ok = true })"), 1)
+	end)
+
 	suite:case("leaves a returned list of values alone", function(assert)
 		assert.eq(#lintSource(rule, "return { a, b }"), 0)
 	end)

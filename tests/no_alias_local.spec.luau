@@ -50,6 +50,28 @@ test.suite("no_alias_local", function(suite)
 		assert.eq(#lintSource(rule, source), 0)
 	end)
 
+	suite:case("leaves a local that keeps a field's earlier value alone", function(assert)
+		local source =
+			"local function swap(props, nextValue)\n\tlocal old = props.value\n\tprops.value = nextValue\n\treturn old\nend"
+		assert.eq(#lintSource(rule, source), 0)
+	end)
+
+	suite:case("leaves a local alone when a field it sits in is assigned", function(assert)
+		local source =
+			"local function f(props)\n\tlocal size = props.style.size\n\tprops.style = {}\n\treturn size\nend"
+		assert.eq(#lintSource(rule, source), 0)
+	end)
+
+	suite:case("leaves a local alone when the parameter is reassigned", function(assert)
+		local source = "local function f(props)\n\tlocal text = props.text\n\tprops = defaults\n\treturn text\nend"
+		assert.eq(#lintSource(rule, source), 0)
+	end)
+
+	suite:case("still flags a local when an unrelated field is assigned", function(assert)
+		local source = "local function f(props)\n\tlocal text = props.text\n\tprops.size = 10\n\treturn text\nend"
+		assert.eq(#lintSource(rule, source), 1)
+	end)
+
 	suite:case("leaves the parameter itself alone", function(assert)
 		local source = "local function f(props)\n\tlocal copy = props\n\treturn copy\nend"
 		assert.eq(#lintSource(rule, source), 0)

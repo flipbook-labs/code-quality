@@ -28,11 +28,28 @@ local function isInline(tbl: syntax.CstExprTable): boolean
 	return tbl.location.beginLine == tbl.location.endLine
 end
 
+-- `return { ok = true } :: Result` and `return ({ ok = true })` still return
+-- the table, so casts and parentheses are looked through.
+local function unwrap(expr: syntax.CstExpr): syntax.CstExpr
+	local current = expr
+	while true do
+		local cast = utils.isExprTypeAssertion(current)
+		local group = utils.isExprGroup(current)
+		if cast then
+			current = cast.operand
+		elseif group then
+			current = group.expression
+		else
+			return current
+		end
+	end
+end
+
 local function collectReturnedTables(cst: syntax.CstStatBlock): { [syntax.CstExprTable]: true }
 	local returned: { [syntax.CstExprTable]: true } = {}
 	query.findAllFromRoot(cst, utils.isStatReturn):forEach(function(statement)
 		for _, expr in statement.expressions do
-			local tbl = utils.isExprTable(expr)
+			local tbl = utils.isExprTable(unwrap(expr))
 			if tbl then
 				returned[tbl] = true
 			end

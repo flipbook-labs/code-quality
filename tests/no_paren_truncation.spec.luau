@@ -12,6 +12,24 @@ test.suite("no_paren_truncation", function(suite)
 		assert.eq(#lintSource(rule, "print((string.gsub(text, 'a', 'b')))"), 1)
 	end)
 
+	suite:case("flags a parenthesized call at the end of a table list", function(assert)
+		assert.eq(#lintSource(rule, "local parts = { first, (f()) }"), 1)
+	end)
+
+	suite:case("flags a parenthesized call assigned to several variables", function(assert)
+		assert.eq(#lintSource(rule, "local a, b = (f())"), 1)
+	end)
+
+	suite:case("leaves parentheses that don't change the value count alone", function(assert)
+		local source = table.concat({
+			"local value = (f())",
+			"if (f()) then end",
+			"local total = (f()) + 1",
+			"print((f()), other)",
+		}, "\n")
+		assert.eq(#lintSource(rule, source), 0)
+	end)
+
 	suite:case("leaves parentheses around other expressions alone", function(assert)
 		assert.eq(#lintSource(rule, "local total = (a + b) * c"), 0)
 	end)
