@@ -8,8 +8,21 @@ The house Luau style is written down as prose in [agent-skills](https://github.c
 
 The rules come in two folders:
 
-- `src/rules/lints` catches likely bugs, as a replacement for [Selene](https://github.com/Kampfkarren/selene). It has no rules yet.
+- `src/rules/lints` catches likely bugs, as a replacement for [Selene](https://github.com/Kampfkarren/selene).
 - `src/rules/style` enforces the house style. It holds these rules:
+
+### Lints
+
+| Rule | What it flags |
+| --- | --- |
+| `high_cyclomatic_complexity` | A function with more branches, loops, `and`s, and `or`s than `maximum_complexity` allows |
+| `if_same_then_else` | An `if` branch whose block repeats an earlier branch of the same `if` |
+| `ifs_same_cond` | An `elseif` whose condition repeats an earlier condition of the same `if` |
+| `manual_table_clone` | A loop that copies a fresh table's entries one by one, where `table.clone` does the same |
+
+`high_cyclomatic_complexity` takes one option, `maximum_complexity`, which defaults to `40`. Set it under `lute.lint.ruleconfigs.high_cyclomatic_complexity.options`. Selene ships this lint off; here it's on by default, so a project that doesn't want it turns it off in its config.
+
+### Style
 
 | Rule                        | What it asks for                                                                                       |
 | --------------------------- | ------------------------------------------------------------------------------------------------------ |
