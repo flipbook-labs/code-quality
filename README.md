@@ -37,15 +37,22 @@ Explicit instantiation needs StyLua's `syntax = "Luau"` setting. Without it, Sty
 
 ## Using the rules
 
-Point `lute lint` at one rule folder of the installed package, or at `src/rules` for both:
+Point `lute lint` at the `src/rules` folder of the installed package to run both sets of rules, or at its `lints` or `style` subfolder for one. The package exports the `src/rules` folder's absolute path as `RULES_PATH`, so a Lute script doesn't need to know where Loom installed it:
 
-```sh
-lute lint --rules <package>/src/rules/lints src
-lute lint --rules <package>/src/rules/style src
-lute lint --rules <package>/src/rules src
+```luau
+local CodeQuality = require("@luaupkg/CodeQuality@v0.3.0")
+local path = require("@std/path")
+local process = require("@std/process")
+
+-- Both folders
+process.run({ "lute", "lint", "--sequential", "--rules", CodeQuality.RULES_PATH, "src" })
+
+-- Only the Selene replacement
+local lintsPath = path.format(path.join(CodeQuality.RULES_PATH, "lints"))
+process.run({ "lute", "lint", "--sequential", "--rules", lintsPath, "src" })
 ```
 
-`lute lint` keeps only the last `--rules` it's given, so passing the flag once per folder runs just the last one. Lute's built-in rules run alongside these unless you pass `--no-default-lints`.
+`--sequential` works around a crash in Lute's parallel linting (#27). `lute lint` keeps only the last `--rules` it's given, so passing the flag once per folder runs just the last one. Lute's built-in rules run alongside these unless you pass `--no-default-lints`.
 
 ## Development
 
