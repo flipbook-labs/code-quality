@@ -54,22 +54,44 @@ local PATHLIKE_PARAMETERS: { [string]: { [string]: number } } = {
 	},
 }
 
+-- The `@std/path` functions that return a `Path`. The others don't.
+local PATH_RETURNING: { [string]: true } = {
+	join = true,
+	normalize = true,
+	parse = true,
+	relative = true,
+	resolve = true,
+}
+
+-- A local that's assigned again after it's declared may no longer hold what it
+-- started with, so the rule doesn't trust what its declaration says about it.
+local function collectReassignedLocals(cst: syntax.CstStatBlock): { [syntax.CstLocal]: true }
+	local reassigned: { [syntax.CstLocal]: true } = {}
+	local function markTarget(target: syntax.CstExpr)
+		local variable = utils.isExprLocal(target)
+		if variable then
+			reassigned[variable["local"]] = true
+		end
+	end
+	query.findAllFromRoot(cst, utils.isStatAssign):forEach(function(assign)
+		for _, target in assign.variables do
+			markTarget(target)
+		end
+	end)
+	query.findAllFromRoot(cst, utils.isStatCompoundAssign):forEach(function(assign)
+		markTarget(assign.variable)
+	end)
+	return reassigned
+end
+
 -- Code can bind a module to any name, as in `local pathlib = require("@std/path")`,
 -- so calls are matched by the local they go through rather than its name.
 -- This maps each local bound to `require("@std/fs")` or `require("@std/path")`
--- to that require string. A local that's assigned again later may no longer
--- hold the module, so it's left out.
-local function collectModuleLocals(cst: syntax.CstStatBlock): { [syntax.CstLocal]: string }
-	local reassigned: { [syntax.CstLocal]: true } = {}
-	query.findAllFromRoot(cst, utils.isStatAssign):forEach(function(assign)
-		for _, target in assign.variables do
-			local variable = utils.isExprLocal(target)
-			if variable then
-				reassigned[variable["local"]] = true
-			end
-		end
-	end)
-
+-- to that require string.
+local function collectModuleLocals(
+	cst: syntax.CstStatBlock,
+	reassigned: { [syntax.CstLocal]: true }
+): { [syntax.CstLocal]: string }
 	local modules: { [syntax.CstLocal]: string } = {}
 	query.findAllFromRoot(cst, utils.isStatLocal):forEach(function(statement)
 		for index, variable in statement.variables do
@@ -114,12 +136,83 @@ local function getModuleCall(call: syntax.CstExprCall, modules: { [syntax.CstLoc
 	}
 end
 
--- Returns the wrapper's name, as the source writes it, when `expr` is a call
--- to `tostring(x)` or `path.format(x)`. The rule can't see what type `x` is, so
--- most single arguments count. A number or boolean literal, as in
--- `tostring(123)`, is the exception. It isn't a `Pathlike`, so that `tostring`
--- is needed.
-local function getConversionName(expr: syntax.CstExpr, modules: { [syntax.CstLocal]: string }): string?
+local function isPathCall(expr: syntax.CstExpr, modules: { [syntax.CstLocal]: string }): boolean
+	local call = utils.isExprCall(unwrapGroups(expr))
+	local moduleCall = if call then getModuleCall(call, modules) else nil
+	return moduleCall ~= nil and moduleCall.module == "@std/path" and PATH_RETURNING[moduleCall.name] == true
+end
+
+-- Whether `annotation` is `Path`, or `Path` read off an `@std/path` local, as
+-- in `path.Path`. The prefix is matched by name against the file's
+-- `@std/path` locals, since a type's prefix isn't linked to a local in the
+-- syntax tree. An optional `Path?` doesn't count, since it may be `nil`.
+local function isPathAnnotation(annotation: syntax.CstType?, modules: { [syntax.CstLocal]: string }): boolean
+	local reference = if annotation then utils.isTypeReference(annotation) else nil
+	if not reference or reference.name.text ~= "Path" or reference.parameters then
+		return false
+	end
+	local prefix = reference.prefix
+	if not prefix then
+		return true
+	end
+	for variable, module in modules do
+		if module == "@std/path" and variable.name.text == prefix.text then
+			return true
+		end
+	end
+	return false
+end
+
+-- Collects the locals and parameters that visibly hold a `Path`: those
+-- annotated `Path`, and locals set from an `@std/path` call that returns one.
+local function collectPathLocals(
+	cst: syntax.CstStatBlock,
+	modules: { [syntax.CstLocal]: string },
+	reassigned: { [syntax.CstLocal]: true }
+): { [syntax.CstLocal]: true }
+	local pathLocals: { [syntax.CstLocal]: true } = {}
+	query.findAllFromRoot(cst, utils.isStatLocal):forEach(function(statement)
+		for index, variable in statement.variables do
+			local value = statement.values[index]
+			local fromPathCall = value ~= nil and isPathCall(value, modules)
+			if not reassigned[variable] and (fromPathCall or isPathAnnotation(variable.annotation, modules)) then
+				pathLocals[variable] = true
+			end
+		end
+	end)
+	query.findAllFromRoot(cst, utils.isExprFunction):forEach(function(func)
+		for _, parameter in func.parameters do
+			if not reassigned[parameter] and isPathAnnotation(parameter.annotation, modules) then
+				pathLocals[parameter] = true
+			end
+		end
+	end)
+	return pathLocals
+end
+
+type Bindings = {
+	modules: { [syntax.CstLocal]: string },
+	pathLocals: { [syntax.CstLocal]: true },
+}
+
+-- Whether the source shows that `expr` is a `Path`. The rule can't see types,
+-- and a value that isn't a path, as in `fs.exists(tostring(123))`, needs its
+-- `tostring`. So `tostring` is only reported around a value that's visibly a
+-- `Path`.
+local function isVisiblyPath(expr: syntax.CstExpr, bindings: Bindings): boolean
+	local inner = unwrapGroups(expr)
+	local variable = utils.isExprLocal(inner)
+	if variable then
+		return bindings.pathLocals[variable["local"]] == true
+	end
+	return isPathCall(inner, bindings.modules)
+end
+
+-- Returns the wrapper's name, as the source writes it, when `expr` is a
+-- conversion the outer call doesn't need: `tostring(x)` around a visible
+-- `Path`, or `path.format(x)` around any single argument. `path.format` only accepts a
+-- `Pathlike`, so whatever it's given, the outer call accepts too.
+local function getConversionName(expr: syntax.CstExpr, bindings: Bindings): string?
 	local call = utils.isExprCall(expr)
 	if not call or #call.arguments ~= 1 then
 		return nil
@@ -127,14 +220,10 @@ local function getConversionName(expr: syntax.CstExpr, modules: { [syntax.CstLoc
 
 	local global = utils.isExprGlobal(call.func)
 	if global and global.name.text == "tostring" then
-		local argument = unwrapGroups(call.arguments[1])
-		if utils.isExprConstantNumber(argument) or utils.isExprConstantBool(argument) then
-			return nil
-		end
-		return "tostring"
+		return if isVisiblyPath(call.arguments[1], bindings) then "tostring" else nil
 	end
 
-	local moduleCall = getModuleCall(call, modules)
+	local moduleCall = getModuleCall(call, bindings.modules)
 	if moduleCall and moduleCall.module == "@std/path" and moduleCall.name == "format" then
 		return `{moduleCall.alias}.format`
 	end
@@ -142,22 +231,40 @@ local function getConversionName(expr: syntax.CstExpr, modules: { [syntax.CstLoc
 	return nil
 end
 
--- Removing the wrapper can change what the outer call receives. `tostring`
--- passes along one value, but a call or `...` in the last argument passes along
--- all of its values. If `getPaths` returns two paths, `fs.copy(tostring(getPaths()))`
+-- Removing the wrapper can change what the outer call receives. The wrapper
+-- passes along one value. Without it, a call or `...` inside the wrapper lands
+-- in the outer call directly, and in the last argument it passes along all of
+-- its values. If `getPaths` returns two paths, `fs.copy(path.format(getPaths()))`
 -- passes only the first, but `fs.copy(getPaths())` passes both. Those still get
 -- reported, without a fix.
-local function canRemoveWrapper(call: syntax.CstExprCall, position: number, conversionCall: syntax.CstExprCall): boolean
+--
+-- A wrapper in parentheses, or before the last argument, is still cut to one
+-- value after the fix, so it's safe. So is an `@std/path` call that returns a
+-- `Path`, since that's its only return value.
+local function canRemoveWrapper(
+	call: syntax.CstExprCall,
+	position: number,
+	conversionCall: syntax.CstExprCall,
+	modules: { [syntax.CstLocal]: string }
+): boolean
 	local argument = call.arguments[position]
 	if position < #call.arguments or unwrapGroups(argument) ~= argument then
 		return true
 	end
 	local inner = conversionCall.arguments[1]
+	if isPathCall(inner, modules) then
+		return true
+	end
 	return utils.isExprCall(inner) == nil and utils.isExprVarargs(inner) == nil
 end
 
 local function lint(cst: syntax.CstStatBlock, sourcepath: path.Path?): { types.LintViolation }
-	local modules = collectModuleLocals(cst)
+	local reassigned = collectReassignedLocals(cst)
+	local modules = collectModuleLocals(cst, reassigned)
+	local bindings: Bindings = {
+		modules = modules,
+		pathLocals = collectPathLocals(cst, modules, reassigned),
+	}
 	local violations: { types.LintViolation } = {}
 
 	query.findAllFromRoot(cst, utils.isExprCall):forEach(function(call)
@@ -172,7 +279,7 @@ local function lint(cst: syntax.CstStatBlock, sourcepath: path.Path?): { types.L
 				break
 			end
 			local conversion = unwrapGroups(argument)
-			local conversionName = getConversionName(conversion, modules)
+			local conversionName = getConversionName(conversion, bindings)
 			local conversionCall = utils.isExprCall(conversion)
 			if conversionName and conversionCall then
 				local violation: types.LintViolation = {
@@ -181,7 +288,7 @@ local function lint(cst: syntax.CstStatBlock, sourcepath: path.Path?): { types.L
 					message = `\`{moduleCall.alias}.{moduleCall.name}\` takes a \`Pathlike\`, which is already a string, \`Path\`, or \`PathData\`, so the \`{conversionName}\` can go.`,
 					severity = "warning",
 					sourcepath = sourcepath,
-					suggestedfix = if canRemoveWrapper(call, position, conversionCall)
+					suggestedfix = if canRemoveWrapper(call, position, conversionCall, modules)
 						then {
 							fix = printer.printNode(conversionCall.arguments[1]),
 						}
