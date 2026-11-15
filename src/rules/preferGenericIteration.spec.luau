@@ -1,7 +1,7 @@
 local test = require("@std/test")
 
-local lintSource = require("./lib/lintSource")
-local rule = require("@repo/src/rules/prefer_generic_iteration")
+local lintSource = require("../lib/lintSource")
+local rule = require("./preferGenericIteration")
 
 test.suite("prefer_generic_iteration", function(suite)
 	suite:case("flags `pairs`", function(assert)

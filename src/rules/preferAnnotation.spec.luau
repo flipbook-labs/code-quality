@@ -1,7 +1,7 @@
 local test = require("@std/test")
 
-local lintSource = require("./lib/lintSource")
-local rule = require("@repo/src/rules/prefer_annotation")
+local lintSource = require("../lib/lintSource")
+local rule = require("./preferAnnotation")
 
 test.suite("prefer_annotation", function(suite)
 	suite:case("flags a local initialized with a cast table", function(assert)

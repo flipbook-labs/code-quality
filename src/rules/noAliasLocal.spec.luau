@@ -1,7 +1,7 @@
 local test = require("@std/test")
 
-local lintSource = require("./lib/lintSource")
-local rule = require("@repo/src/rules/no_alias_local")
+local lintSource = require("../lib/lintSource")
+local rule = require("./noAliasLocal")
 
 test.suite("no_alias_local", function(suite)
 	suite:case("flags copying a parameter's field into a local", function(assert)

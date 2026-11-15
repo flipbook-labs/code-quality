@@ -1,7 +1,7 @@
 local test = require("@std/test")
 
-local lintSource = require("./lib/lintSource")
-local rule = require("@repo/src/rules/string_union_enum")
+local lintSource = require("../lib/lintSource")
+local rule = require("./stringUnionEnum")
 
 test.suite("string_union_enum", function(suite)
 	suite:case("flags an exported union of three string literals", function(assert)

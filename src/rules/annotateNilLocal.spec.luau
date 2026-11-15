@@ -1,7 +1,7 @@
 local test = require("@std/test")
 
-local lintSource = require("./lib/lintSource")
-local rule = require("@repo/src/rules/annotate_nil_local")
+local lintSource = require("../lib/lintSource")
+local rule = require("./annotateNilLocal")
 
 test.suite("annotate_nil_local", function(suite)
 	suite:case("flags a local set to nil without an annotation", function(assert)

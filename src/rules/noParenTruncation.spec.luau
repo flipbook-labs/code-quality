@@ -1,7 +1,7 @@
 local test = require("@std/test")
 
-local lintSource = require("./lib/lintSource")
-local rule = require("@repo/src/rules/no_paren_truncation")
+local lintSource = require("../lib/lintSource")
+local rule = require("./noParenTruncation")
 
 test.suite("no_paren_truncation", function(suite)
 	suite:case("flags a parenthesized method call", function(assert)
