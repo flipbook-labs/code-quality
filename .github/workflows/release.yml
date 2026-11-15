@@ -17,18 +17,6 @@ env:
   RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
 jobs:
-  lock:
-    if: github.event_name == 'push'
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      statuses: write
-    steps:
-      - uses: flipbook-labs/changewrite/publish-lock@v0.9.0
-        with:
-          locked: true
-          url: ${{ env.RUN_URL }}
-
   release:
     if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'debug:release-pr')
     runs-on: ubuntu-latest
@@ -41,6 +29,15 @@ jobs:
       group: release-pr-${{ github.ref }}
       cancel-in-progress: ${{ github.event_name == 'pull_request' }}
     steps:
+      # Locking in this job, before any release work, guarantees the unlock at
+      # the end runs after it.
+      - name: Lock the publish PR
+        if: github.event_name == 'push'
+        uses: flipbook-labs/changewrite/publish-lock@v0.9.0
+        with:
+          locked: true
+          url: ${{ env.RUN_URL }}
+
       - name: Generate app token
         id: app-token
         uses: actions/create-github-app-token@v3
