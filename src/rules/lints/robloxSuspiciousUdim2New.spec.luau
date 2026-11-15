@@ -56,6 +56,16 @@ test.suite("roblox_suspicious_udim2_new", function(suite)
 		assert.eq(#lintSource(rule, "local size = UDim2.new(1, 1, 1)"), 1)
 	end)
 
+	suite:case("leaves a call or varargs in the last place alone, since it can supply the rest", function(assert)
+		assert.eq(#lintSource(rule, "local size = UDim2.new(parts())"), 0)
+		assert.eq(#lintSource(rule, "local size = UDim2.new(0, offsets())"), 0)
+		assert.eq(#lintSource(rule, "local size = UDim2.new(...)"), 0)
+	end)
+
+	suite:case("flags a parenthesized call in the last place, which gives one value", function(assert)
+		assert.eq(#lintSource(rule, "local size = UDim2.new(0, (offsets()))"), 1)
+	end)
+
 	suite:case("leaves two non-number arguments alone", function(assert)
 		assert.eq(#lintSource(rule, "UDim2.new(a, b)"), 0)
 		assert.eq(#lintSource(rule, "UDim2.new(UDim.new(), UDim.new())"), 0)
