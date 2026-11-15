@@ -3,5 +3,5 @@ categories = ["Features", "Fixes", "Changes"]
 [version]
 current = "0.1.0"
 mirror = [
-  { file = "loom.config.luau" },
+  { file = "pkg.luau", pattern = 'version%s*=%s*"([^"]+)"' },
 ]
