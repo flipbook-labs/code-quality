@@ -41,12 +41,12 @@ local function lint(cst: syntax.CstStatBlock, sourcepath: path.Path?): { types.L
 			local x = argumentSource.text(xOffset)
 			local y = argumentSource.text(yOffset)
 			message =
-				`this UDim2.new call only sets offset, and can be simplified using UDim2.fromOffset. Try: UDim2.fromOffset({x}, {y})`
+				`This UDim2.new call only sets offset, and can be simplified using UDim2.fromOffset. Try: UDim2.fromOffset({x}, {y})`
 		elseif onlyScale then
 			local x = argumentSource.text(xScale)
 			local y = argumentSource.text(yScale)
 			message =
-				`this UDim2.new call only sets scale, and can be simplified using UDim2.fromScale. Try: UDim2.fromScale({x}, {y})`
+				`This UDim2.new call only sets scale, and can be simplified using UDim2.fromScale. Try: UDim2.fromScale({x}, {y})`
 		else
 			return
 		end
