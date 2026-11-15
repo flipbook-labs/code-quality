@@ -12,6 +12,6 @@ local function run(command: { string })
 	end
 end
 
-run({ "stylua", "--check", ".lute", "src", "tests" })
-run({ "selene", ".lute", "src", "tests" })
-run({ "lute", "lint", "--rules", "src/rules", ".lute", "src", "tests" })
+run({ "stylua", "--check", ".lute", "src" })
+run({ "selene", ".lute", "src" })
+run({ "lute", "lint", "--rules", "src/rules", ".lute", "src" })

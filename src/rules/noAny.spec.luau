@@ -1,7 +1,7 @@
 local test = require("@std/test")
 
-local lintSource = require("./lib/lintSource")
-local rule = require("@repo/src/rules/no_any")
+local lintSource = require("../lib/lintSource")
+local rule = require("./noAny")
 
 test.suite("no_any", function(suite)
 	suite:case("flags `any` in an annotation", function(assert)

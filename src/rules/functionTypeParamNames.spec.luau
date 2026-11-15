@@ -1,7 +1,7 @@
 local test = require("@std/test")
 
-local lintSource = require("./lib/lintSource")
-local rule = require("@repo/src/rules/function_type_param_names")
+local lintSource = require("../lib/lintSource")
+local rule = require("./functionTypeParamNames")
 
 test.suite("function_type_param_names", function(suite)
 	suite:case("flags a function type with an unnamed parameter", function(assert)

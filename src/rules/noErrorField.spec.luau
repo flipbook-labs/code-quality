@@ -1,7 +1,7 @@
 local test = require("@std/test")
 
-local lintSource = require("./lib/lintSource")
-local rule = require("@repo/src/rules/no_error_field")
+local lintSource = require("../lib/lintSource")
+local rule = require("./noErrorField")
 
 test.suite("no_error_field", function(suite)
 	suite:case("flags an `error` field in a table constructor", function(assert)

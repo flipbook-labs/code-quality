@@ -51,4 +51,4 @@ lute run analyze
 lute test
 ```
 
-Each rule lives in `src/rules` and has a spec in `tests` that runs it over snippets of source. Keep specs and helpers out of `src/rules`, because `lute lint --rules` loads every file in that folder as a rule.
+Each rule lives in `src/rules` with a spec beside it that runs the rule over snippets of source. `lute lint --rules` loads every file in that folder and skips the ones that don't return a rule, so the specs ship with the rules and load in any repo that runs them. Keep their requires relative, since a repo alias like `@repo` won't resolve there. Shared helpers go in `src/lib`.

@@ -1,7 +1,7 @@
 local test = require("@std/test")
 
-local lintSource = require("./lib/lintSource")
-local rule = require("@repo/src/rules/explicit_instantiation")
+local lintSource = require("../lib/lintSource")
+local rule = require("./explicitInstantiation")
 
 test.suite("explicit_instantiation", function(suite)
 	suite:case("flags a cast `nil` argument", function(assert)
