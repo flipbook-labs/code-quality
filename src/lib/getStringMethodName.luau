@@ -19,17 +19,18 @@ local STRING_METHODS = table.freeze({
 	"upper",
 })
 
--- A call is only worth rewriting when its first argument is a value. With a
--- literal, as in `string.rep("-", 20)` or `string.format("%d", n)`, the free
--- function reads better than `("-"):rep(20)`.
+-- When the first argument is a string literal, as in `string.rep("-", 20)` or
+-- `string.format("%d", n)`, the free function reads better than
+-- `("-"):rep(20)`, so those calls are left as they are.
 local function isStringLiteral(expr: syntax.CstExpr): boolean
 	return utils.isExprConstantString(expr) ~= nil or utils.isExprInterpString(expr) ~= nil
 end
 
--- When `call` calls a string library function on a value, as in
--- `string.find(line, "x")`, returns the function's name ("find"). Returns nil
--- for every other call. The `string_method_call` rule and code mod both use
--- this, so the mod rewrites exactly the calls the rule flags.
+-- When `call` calls a string library function on anything but a string
+-- literal, as in `string.find(line, "x")`, returns the function's name
+-- ("find"). Returns nil for every other call. The `string_method_call` rule
+-- flags the calls this matches, and its code mod rewrites them, so the two
+-- agree on which calls count.
 local function getStringMethodName(call: syntax.CstExprCall): string?
 	local index = utils.isExprIndexName(call.func)
 	if not index or index.accessor.text ~= "." then

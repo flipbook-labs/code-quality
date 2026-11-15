@@ -55,7 +55,7 @@ local function canRewrite(call: syntax.CstExprCall): boolean
 		return false
 	end
 
-	-- A call or `...` as the last argument passes along every value it
+	-- A call or `...` as the only argument passes along every value it
 	-- returns, so `string.sub(getRange())` might pass the string and both
 	-- indices. As a receiver, it would keep only the first.
 	local isOnlyArgument = #call.arguments == 1
