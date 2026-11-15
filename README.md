@@ -24,6 +24,8 @@ The house Luau style is written down as prose in [agent-skills](https://github.c
 
 Every rule reports at warning severity. To silence one on a statement, put `-- lute-lint-ignore(<rule>)` on the line above it. `no_any` and `tostring_in_interpolation` come with fixes that `lute lint --auto-fix` applies.
 
+`explicit_instantiation` also flags a cast on the result of a call whose only argument is a table constructor. It asks for `table.freeze<<Metrics>>({ ... })` instead of `table.freeze({ ... }) :: Metrics`.
+
 Explicit instantiation needs StyLua's `syntax = "Luau"` setting. Without it, StyLua can't parse `f<<T>>()`.
 
 ## Using the rules

@@ -35,6 +35,47 @@ test.suite("explicit_instantiation", function(suite)
 		assert.eq(violations[1].suggestedfix, nil)
 	end)
 
+	suite:case("flags a cast on a call that takes a table constructor", function(assert)
+		assert.eq(#lintSource(rule, "local metrics = table.freeze({ height = 18 }) :: ChipMetrics"), 1)
+	end)
+
+	suite:case("flags a cast call nested in a table", function(assert)
+		local source = table.concat({
+			"return table.freeze({",
+			"	metrics = table.freeze({ height = 18 }) :: ChipMetrics,",
+			"})",
+		}, "\n")
+		assert.eq(#lintSource(rule, source), 1)
+	end)
+
+	suite:case("flags a cast on a method call that takes a table constructor", function(assert)
+		assert.eq(#lintSource(rule, "local items = store:wrap({}) :: { Item }"), 1)
+	end)
+
+	suite:case("flags a cast call wrapped in parentheses", function(assert)
+		assert.eq(#lintSource(rule, "local metrics = ((table.freeze({ height = 18 }))) :: ChipMetrics"), 1)
+	end)
+
+	suite:case("flags a cast call whose table is wrapped in parentheses", function(assert)
+		assert.eq(#lintSource(rule, "local metrics = table.freeze(({ height = 18 })) :: ChipMetrics"), 1)
+	end)
+
+	suite:case("leaves a cast on a call with a string argument alone", function(assert)
+		assert.eq(#lintSource(rule, 'local part = model:FindFirstChild("Handle") :: Part'), 0)
+	end)
+
+	suite:case("leaves a cast on a call with several arguments alone", function(assert)
+		assert.eq(#lintSource(rule, "local self = setmetatable({}, Class) :: Class"), 0)
+	end)
+
+	suite:case("leaves a cast on a call with a variable argument alone", function(assert)
+		assert.eq(#lintSource(rule, "local metrics = table.freeze(base) :: ChipMetrics"), 0)
+	end)
+
+	suite:case("leaves an explicitly instantiated call alone", function(assert)
+		assert.eq(#lintSource(rule, "local metrics = table.freeze<<ChipMetrics>>({ height = 18 })"), 0)
+	end)
+
 	suite:case("leaves a cast of a variable alone", function(assert)
 		assert.eq(#lintSource(rule, "useState(initial :: string?)"), 0)
 	end)
