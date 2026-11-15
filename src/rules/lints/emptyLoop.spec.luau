@@ -49,6 +49,15 @@ test.suite("empty_loop", function(suite)
 		assert.eq(#lintSource(rule, COMMENTED_LOOPS, { comments_count = true }), 0)
 	end)
 
+	suite:case("ignores comments in the loop header when comments_count is set", function(assert)
+		local source = table.concat({
+			"while --[[ready?]] ready do end",
+			"for _ = 1, --[[count]] 10 do end",
+			"repeat until --[[done?]] done",
+		}, "\n")
+		assert.eq(#lintSource(rule, source, { comments_count = true }), 3)
+	end)
+
 	suite:case("ignores comments outside the loop when comments_count is set", function(assert)
 		local source = "-- before\nwhile true do\nend\n-- after"
 		assert.eq(#lintSource(rule, source, { comments_count = true }), 1)
