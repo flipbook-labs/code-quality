@@ -1,7 +1,7 @@
 local test = require("@std/test")
 
-local lintSource = require("./lib/lintSource")
-local rule = require("@repo/src/rules/tostring_in_interpolation")
+local lintSource = require("../lib/lintSource")
+local rule = require("./tostringInInterpolation")
 
 test.suite("tostring_in_interpolation", function(suite)
 	suite:case("flags `tostring` around an interpolated value", function(assert)

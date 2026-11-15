@@ -1,7 +1,7 @@
 local test = require("@std/test")
 
-local lintSource = require("./lib/lintSource")
-local rule = require("@repo/src/rules/string_method_call")
+local lintSource = require("../lib/lintSource")
+local rule = require("./stringMethodCall")
 
 test.suite("string_method_call", function(suite)
 	suite:case("flags a string library call on a value", function(assert)

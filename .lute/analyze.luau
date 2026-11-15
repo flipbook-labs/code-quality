@@ -13,7 +13,6 @@ local result = process.run({
 	"--settings=.vscode/settings.json",
 	".lute",
 	"src",
-	"tests",
 }, {
 	stdio = "inherit",
 })

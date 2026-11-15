@@ -3,7 +3,7 @@ local query = require("@std/syntax/query")
 local test = require("@std/test")
 local utils = require("@std/syntax/utils")
 
-local getReportLocation = require("@repo/src/lib/getReportLocation")
+local getReportLocation = require("./getReportLocation")
 
 local function getAnyLocation(source: string)
 	local cst = parser.parseBlock(source)

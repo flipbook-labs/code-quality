@@ -1,7 +1,7 @@
 local test = require("@std/test")
 
-local lintSource = require("./lib/lintSource")
-local rule = require("@repo/src/rules/inline_table")
+local lintSource = require("../lib/lintSource")
+local rule = require("./inlineTable")
 
 test.suite("inline_table", function(suite)
 	suite:case("flags three keyed fields on one line", function(assert)
