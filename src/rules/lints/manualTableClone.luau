@@ -39,17 +39,11 @@ local function itemAt<T>(items: Items<T>, index: number): T?
 	return nil
 end
 
--- The name an expression refers to when it is a plain global or local name.
-local function identName(expr: syntax.CstExpr): string?
+-- The name of a global, or nil for anything else. A local named `pairs` could
+-- skip or change entries, so only the built-in iterators count.
+local function globalName(expr: syntax.CstExpr): string?
 	local global = utils.isExprGlobal(expr)
-	if global then
-		return global.name.text
-	end
-	local localRef = utils.isExprLocal(expr)
-	if localRef then
-		return localRef.token.text
-	end
-	return nil
+	return if global then global.name.text else nil
 end
 
 -- The iterable a loop copies from: `pairs(t)`, `ipairs(t)`, `next, t`, or a
@@ -73,7 +67,7 @@ local function loopSource(values: Items<syntax.CstExpr>): LoopSource?
 			}
 		end
 
-		local root = identName(call.func)
+		local root = globalName(call.func)
 		if root ~= "pairs" and root ~= "ipairs" then
 			return nil
 		end
@@ -93,7 +87,7 @@ local function loopSource(values: Items<syntax.CstExpr>): LoopSource?
 	if #values == 2 then
 		local first = firstItem(values)
 		local second = itemAt(values, 2)
-		if first == nil or second == nil or identName(first) ~= "next" then
+		if first == nil or second == nil or globalName(first) ~= "next" then
 			return nil
 		end
 		return {

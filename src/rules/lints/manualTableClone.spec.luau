@@ -45,6 +45,22 @@ test.suite("manual_table_clone", function(suite)
 		assert.eq(#lintSource(rule, source), 0)
 	end)
 
+	suite:case("leaves a loop over a local named like a built-in iterator", function(assert)
+		local source = table.concat({
+			"local function pairs(t) return next, t end",
+			"local new = {}",
+			"for key, value in pairs(stuff) do",
+			"\tnew[key] = value",
+			"end",
+			"local next = function() end",
+			"local other = {}",
+			"for key, value in next, stuff do",
+			"\tother[key] = value",
+			"end",
+		}, "\n")
+		assert.eq(#lintSource(rule, source), 0)
+	end)
+
 	suite:case("flags a copy whose table is used after the loop", function(assert)
 		assert.eq(
 			#lintSource(
