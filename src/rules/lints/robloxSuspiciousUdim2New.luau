@@ -25,6 +25,14 @@ local function lint(cst: syntax.CstStatBlock, sourcepath: path.Path?): { types.L
 			return
 		end
 
+		-- A call or `...` in the last place can supply the rest of the values, as
+		-- in `UDim2.new(parts())`, so the written count says nothing. Selene flags
+		-- these anyway. A parenthesized call only gives one value, so it counts.
+		local last = arguments[provided]
+		if utils.isExprCall(last) or utils.isExprVarargs(last) then
+			return
+		end
+
 		-- Only literal numbers count, so `-1` doesn't, as in Selene.
 		local numberCount = 0
 		local allBetweenZeroAndOne = true
