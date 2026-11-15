@@ -2,6 +2,7 @@ local path = require("@std/path")
 local syntax = require("@std/syntax")
 local visitorLib = require("@std/syntax/visitor")
 
+local getReportLocation = require("../../lib/getReportLocation")
 local types = require("../../types")
 
 local NAME = "restricted_module_paths"
@@ -120,7 +121,7 @@ local function lint(
 			end
 			local violation: types.LintViolation = {
 				lintname = NAME,
-				location = location,
+				location = getReportLocation(cst, location),
 				message = "Module path `" .. fullPath .. "` is restricted. " .. restricted[fullPath],
 				severity = "warning",
 				sourcepath = sourcepath,

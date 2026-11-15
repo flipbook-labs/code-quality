@@ -1,6 +1,7 @@
 local path = require("@std/path")
 local syntax = require("@std/syntax")
 
+local getReportLocation = require("../../lib/getReportLocation")
 local ignorePattern = require("../../lib/ignorePattern")
 local scopeTracker = require("../../lib/scopeTracker")
 local types = require("../../types")
@@ -19,7 +20,7 @@ local function lint(
 		if declaration.shadowsLocation and not ignorePattern.isIgnored(pattern, declaration.name) then
 			local violation: types.LintViolation = {
 				lintname = NAME,
-				location = declaration.location,
+				location = getReportLocation(cst, declaration.location),
 				message = "This shadows `"
 					.. declaration.name
 					.. "`, which is already declared in scope. Rename one of them, or add the name to `ignore_pattern`.",

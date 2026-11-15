@@ -1,6 +1,7 @@
 local path = require("@std/path")
 local syntax = require("@std/syntax")
 
+local getReportLocation = require("../../lib/getReportLocation")
 local ignorePattern = require("../../lib/ignorePattern")
 local scopeTracker = require("../../lib/scopeTracker")
 local types = require("../../types")
@@ -31,7 +32,7 @@ local function lint(
 		then
 			local violation: types.LintViolation = {
 				lintname = NAME,
-				location = reference.location,
+				location = getReportLocation(cst, reference.location),
 				message = "`" .. reference.name .. "` is not declared locally, and will be available in every scope.",
 				severity = "warning",
 				sourcepath = sourcepath,

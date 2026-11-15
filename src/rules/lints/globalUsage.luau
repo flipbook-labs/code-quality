@@ -1,6 +1,7 @@
 local path = require("@std/path")
 local syntax = require("@std/syntax")
 
+local getReportLocation = require("../../lib/getReportLocation")
 local ignorePattern = require("../../lib/ignorePattern")
 local scopeTracker = require("../../lib/scopeTracker")
 local types = require("../../types")
@@ -27,7 +28,7 @@ local function lint(
 		if reference.name == "_G" and not reference.resolved and not ignored then
 			local violation: types.LintViolation = {
 				lintname = NAME,
-				location = reference.location,
+				location = getReportLocation(cst, reference.location),
 				message = "use of `_G` is not allowed, structure your code in a more idiomatic way",
 				severity = "warning",
 				sourcepath = sourcepath,
