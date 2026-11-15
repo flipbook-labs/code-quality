@@ -1,6 +1,6 @@
 local test = require("@std/test")
 
-local lintSource = require("../lib/lintSource")
+local lintSource = require("../../lib/lintSource")
 local rule = require("./inlineTable")
 
 test.suite("inline_table", function(suite)

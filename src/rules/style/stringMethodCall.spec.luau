@@ -1,6 +1,6 @@
 local test = require("@std/test")
 
-local lintSource = require("../lib/lintSource")
+local lintSource = require("../../lib/lintSource")
 local rule = require("./stringMethodCall")
 
 test.suite("string_method_call", function(suite)

@@ -1,6 +1,6 @@
 local test = require("@std/test")
 
-local lintSource = require("../lib/lintSource")
+local lintSource = require("../../lib/lintSource")
 local rule = require("./functionTypeParamNames")
 
 test.suite("function_type_param_names", function(suite)

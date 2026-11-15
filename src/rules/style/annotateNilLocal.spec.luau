@@ -1,6 +1,6 @@
 local test = require("@std/test")
 
-local lintSource = require("../lib/lintSource")
+local lintSource = require("../../lib/lintSource")
 local rule = require("./annotateNilLocal")
 
 test.suite("annotate_nil_local", function(suite)

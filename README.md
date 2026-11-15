@@ -6,6 +6,11 @@ The house Luau style is written down as prose in [agent-skills](https://github.c
 
 ## Rules
 
+The rules come in two folders:
+
+- `src/rules/lints` catches likely bugs, as a replacement for [Selene](https://github.com/Kampfkarren/selene). It has no rules yet.
+- `src/rules/style` enforces the house style. It holds these rules:
+
 | Rule                        | What it asks for                                                                                       |
 | --------------------------- | ------------------------------------------------------------------------------------------------------ |
 | `annotate_nil_local`        | An annotation on locals that start as `nil`                                                            |
@@ -32,11 +37,15 @@ Explicit instantiation needs StyLua's `syntax = "Luau"` setting. Without it, Sty
 
 ## Using the rules
 
-Point `lute lint` at the `src/rules` folder of the installed package:
+Point `lute lint` at one rule folder of the installed package, or at `src/rules` for both:
 
 ```sh
+lute lint --rules <package>/src/rules/lints src
+lute lint --rules <package>/src/rules/style src
 lute lint --rules <package>/src/rules src
 ```
+
+`lute lint` keeps only the last `--rules` it's given, so passing the flag once per folder runs just the last one. Lute's built-in rules run alongside these unless you pass `--no-default-lints`.
 
 ## Development
 
@@ -57,4 +66,4 @@ lute run analyze
 lute test
 ```
 
-Each rule lives in `src/rules` with a spec beside it that runs the rule over snippets of source. `lute lint --rules` loads every file in that folder and skips the ones that don't return a rule, so the specs ship with the rules and load in any repo that runs them. Keep their requires relative, since a repo alias like `@repo` won't resolve there. Shared helpers go in `src/lib`.
+Each rule lives in `src/rules/lints` or `src/rules/style` with a spec beside it that runs the rule over snippets of source. `lute lint --rules` loads every file in the folder it's given, including the files in its subfolders, and skips the ones that don't return a rule, so the specs ship with the rules and load in any repo that runs them. Keep their requires relative, since a repo alias like `@repo` won't resolve there. Shared helpers go in `src/lib`.

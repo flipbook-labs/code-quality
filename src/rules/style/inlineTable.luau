@@ -3,7 +3,7 @@ local query = require("@std/syntax/query")
 local syntax = require("@std/syntax")
 local utils = require("@std/syntax/utils")
 
-local types = require("../types")
+local types = require("../../types")
 
 local NAME = "inline_table"
 

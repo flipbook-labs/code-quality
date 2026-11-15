@@ -3,8 +3,8 @@ local query = require("@std/syntax/query")
 local syntax = require("@std/syntax")
 local utils = require("@std/syntax/utils")
 
-local isLiteral = require("../lib/isLiteral")
-local types = require("../types")
+local isLiteral = require("../../lib/isLiteral")
+local types = require("../../types")
 
 local NAME = "prefer_annotation"
 

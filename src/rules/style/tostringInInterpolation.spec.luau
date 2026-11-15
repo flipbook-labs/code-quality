@@ -1,6 +1,6 @@
 local test = require("@std/test")
 
-local lintSource = require("../lib/lintSource")
+local lintSource = require("../../lib/lintSource")
 local rule = require("./tostringInInterpolation")
 
 test.suite("tostring_in_interpolation", function(suite)

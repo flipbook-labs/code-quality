@@ -3,8 +3,8 @@ local query = require("@std/syntax/query")
 local syntax = require("@std/syntax")
 local utils = require("@std/syntax/utils")
 
-local getReportLocation = require("../lib/getReportLocation")
-local types = require("../types")
+local getReportLocation = require("../../lib/getReportLocation")
+local types = require("../../types")
 
 local NAME = "function_type_param_names"
 
