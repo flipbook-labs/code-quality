@@ -8,15 +8,42 @@ The house Luau style is written down as prose in [agent-skills](https://github.c
 
 The rules come in two folders:
 
-- `src/rules/lints` catches likely bugs, as a replacement for [Selene](https://github.com/Kampfkarren/selene).
+- `src/rules/lints` catches likely bugs, as a replacement for [Selene](https://github.com/Kampfkarren/selene). Each rule is named after the Selene lint it ports and matches its behavior.
 - `src/rules/style` enforces the house style.
 
 ### Lints
 
-| Rule         | What it flags |
-| ------------ | ------------- |
+| Rule | What it flags |
+| --- | --- |
+| `bad_string_escape` | An escape that doesn't exist, like `"\q"`, or a quote escaped where it doesn't need to be |
+| `compare_nan` | `x == 0/0`, which is always false; use `x ~= x` |
 | `deprecated` | Standard library functions and fields that are deprecated, such as `table.getn`, and deprecated parameters, such as the second argument to `Instance.new` |
+| `empty_loop` | A loop with an empty body |
+| `high_cyclomatic_complexity` | A function with more branches, loops, `and`s, and `or`s than `maximum_complexity` allows |
+| `if_same_then_else` | An `if` branch whose block repeats an earlier branch of the same `if` |
+| `ifs_same_cond` | An `elseif` whose condition repeats an earlier condition of the same `if` |
+| `manual_table_clone` | A loop that copies a fresh table's entries one by one, where `table.clone` does the same |
+| `mixed_table` | A table constructor with both positional and keyed entries |
+| `multiple_statements` | More than one statement on a line |
 | `must_use`   | A standard library call whose return value is discarded, as in a `math.max(x, y)` statement |
+| `suspicious_reverse_loop` | `for i = #t, 1 do`, which needs a step of `-1` to count down |
+| `unbalanced_assignments` | An assignment with more values than names, or fewer values without a trailing call |
+
+`empty_loop` takes a `comments_count` option. When it's `true`, a loop whose body is only a comment isn't flagged. `multiple_statements` takes a `one_line_if` option: `"break-return-only"` (the default) allows `if x then return end` on one line, `"allow"` allows any one-line `if` with a single statement, and `"deny"` allows none. Set options in `.config.luau`:
+
+```luau
+return {
+	lute = {
+		lint = {
+			ruleconfigs = {
+				empty_loop = { options = { comments_count = true } },
+			},
+		},
+	},
+}
+```
+
+`high_cyclomatic_complexity` takes one option, `maximum_complexity`, which defaults to `40`. Set it under `lute.lint.ruleconfigs.high_cyclomatic_complexity.options`. Selene ships this lint off; here it's on by default, so a project that doesn't want it turns it off in its config.
 
 `deprecated` takes an `allow` option, a list of dotted paths to leave alone, such as `table.getn` or `table.*`. A path also allows everything under it.
 
@@ -48,15 +75,21 @@ Explicit instantiation needs StyLua's `syntax = "Luau"` setting. Without it, Sty
 
 ## Using the rules
 
-Point `lute lint` at one rule folder of the installed package, or at `src/rules` for both:
+Point `lute lint` at a rule folder of the installed package. The package exports each folder's absolute path, so a Lute script doesn't need to know where Loom installed it:
 
-```sh
-lute lint --rules <package>/src/rules/lints src
-lute lint --rules <package>/src/rules/style src
-lute lint --rules <package>/src/rules src
+- `LINT_RULES_PATH` is `src/rules/lints`, the Selene replacement.
+- `STYLE_RULES_PATH` is `src/rules/style`, the house style.
+- `RULES_PATH` is `src/rules`, which runs both.
+
+```luau
+local CodeQuality = require("@luaupkg/CodeQuality@v0.3.0")
+local process = require("@std/process")
+
+-- Only the Selene replacement. Use RULES_PATH to run the house style too.
+process.run({ "lute", "lint", "--sequential", "--rules", CodeQuality.LINT_RULES_PATH, "src" })
 ```
 
-`lute lint` keeps only the last `--rules` it's given, so passing the flag once per folder runs just the last one. Lute's built-in rules run alongside these unless you pass `--no-default-lints`.
+`--sequential` works around a crash in Lute's parallel linting (#27). `lute lint` keeps only the last `--rules` it's given, so passing the flag once per folder runs just the last one. Lute's built-in rules run alongside these unless you pass `--no-default-lints`.
 
 ## Development
 
