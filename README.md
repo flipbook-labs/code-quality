@@ -19,8 +19,10 @@ The house Luau style is written down as prose in [agent-skills](https://github.c
 | `prefer_annotation`         | `local items: { Item } = {}` instead of `local items = {} :: { Item }`                                 |
 | `prefer_generic_iteration`  | `for k, v in t` instead of `pairs(t)` or `ipairs(t)`                                                   |
 | `string_method_call`        | `value:find(...)` instead of `string.find(value, ...)`                                                 |
-| `string_union_enum`         | A frozen table of named constants instead of an exported union of three or more string literals        |
+| `string_union_enum`         | A frozen table of named constants alongside an exported union of three or more string literals         |
 | `tostring_in_interpolation` | `` `got {value}` `` instead of `` `got {tostring(value)}` ``                                           |
+
+Casting a table to `{ unknown }` or `{ any }`, as React dependency arrays often do, widens it rather than setting a type parameter, so `explicit_instantiation` allows it.
 
 Every rule reports at warning severity. To silence one on a statement, put `-- lute-lint-ignore(<rule>)` on the line above it. `no_any` and `tostring_in_interpolation` come with fixes that `lute lint --auto-fix` applies.
 
