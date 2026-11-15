@@ -43,6 +43,18 @@ test.suite("explicit_instantiation", function(suite)
 		assert.eq(#lintSource(rule, "useState<<string?>>(nil)"), 0)
 	end)
 
+	suite:case("leaves a table widened to `{ unknown }` alone", function(assert)
+		assert.eq(#lintSource(rule, "useEffect(update, { value, setValue } :: { unknown })"), 0)
+	end)
+
+	suite:case("leaves a table widened to `{ any }` alone", function(assert)
+		assert.eq(#lintSource(rule, "useCallback(onClick, { plugin, story } :: { any })"), 0)
+	end)
+
+	suite:case("flags a table cast to a typed array", function(assert)
+		assert.eq(#lintSource(rule, "Charm.signal({} :: { TreeNodeStore })"), 1)
+	end)
+
 	suite:case("leaves a cast outside a call alone", function(assert)
 		assert.eq(#lintSource(rule, "local value = nil :: string?"), 0)
 	end)
