@@ -23,13 +23,13 @@ test.suite("stringMethodCall code mod", function(suite)
 			"string.split(self.path, '/')",
 			"string.split(paths[1], '/')",
 			"string.split(getPath(), '/')",
-			"string.split((path), '/')",
+			"local parts = string.split((path), '/')",
 		}, "\n")
 		local expected = table.concat({
 			"self.path:split('/')",
 			"paths[1]:split('/')",
 			"getPath():split('/')",
-			"(path):split('/')",
+			"local parts = (path):split('/')",
 		}, "\n")
 		assert.eq(transformSource(migration, source), expected)
 	end)
@@ -74,8 +74,28 @@ test.suite("stringMethodCall code mod", function(suite)
 	end)
 
 	suite:case("leaves a literal that isn't a string alone", function(assert)
-		local source = "local digits = string.rep(5, 3)"
+		local source = "local digits = string.rep(5, 3)\nlocal more = string.rep((5), 3)"
 		assert.eq(transformSource(migration, source), source)
+	end)
+
+	suite:case("leaves a statement that would start with a parenthesis alone", function(assert)
+		local source = table.concat({
+			"local saved = getValue()",
+			"string.gsub(a .. b, 'x', 'y')",
+			"string.gsub((name), 'x', 'y')",
+			"string.sub(string.lower(a .. b), 1, 2)",
+		}, "\n")
+		local expected = table.concat({
+			"local saved = getValue()",
+			"string.gsub(a .. b, 'x', 'y')",
+			"string.gsub((name), 'x', 'y')",
+			"string.sub((a .. b):lower(), 1, 2)",
+		}, "\n")
+		assert.eq(transformSource(migration, source), expected)
+	end)
+
+	suite:case("rewrites a statement that starts with a name", function(assert)
+		assert.eq(transformSource(migration, "string.gsub(name, 'x', 'y')"), "name:gsub('x', 'y')")
 	end)
 
 	suite:case("leaves a call that passes along several values alone", function(assert)

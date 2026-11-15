@@ -15,6 +15,7 @@ local utils = require("@std/syntax/utils")
 
 local getStringMethodName = require("../lib/getStringMethodName")
 local isLiteral = require("../lib/isLiteral")
+local unwrapGroups = require("../lib/unwrapGroups")
 
 -- Deletes a node along with the whitespace and comments around it.
 local DELETE: syntaxTypes.Replacement = {
@@ -50,8 +51,9 @@ local function canRewrite(call: syntax.CstExprCall): boolean
 	local receiver = call.arguments[1]
 
 	-- Only strings have methods, so `string.rep(5, 3)` works but `(5):rep(3)`
-	-- throws. A literal of any other type would hit the same error.
-	if isLiteral(receiver) then
+	-- throws, and `((5)):rep(3)` throws too. A literal of any other type would
+	-- hit the same error.
+	if isLiteral(unwrapGroups(receiver)) then
 		return false
 	end
 
@@ -71,14 +73,36 @@ local function canRewrite(call: syntax.CstExprCall): boolean
 		and not (separator and (hasComment(separator.leadingTrivia) or hasComment(separator.trailingTrivia)))
 end
 
+local function getPositionKey(location: syntax.Span): string
+	return `{location.beginLine}:{location.beginColumn}`
+end
+
+-- Finds where each statement that can open with an expression begins, like a
+-- bare call or an assignment. A rewrite that would put `(` at one of these
+-- positions is skipped. Luau could read that `(` as a call on the end of the
+-- line before, as in `local saved = getValue()` followed by
+-- `(a .. b):gsub("x", "y")`.
+local function getStatementStarts(parseresult: syntax.CstParseResult): { [string]: true }
+	local starts: { [string]: true } = {}
+	query
+		.findAllFromRoot(parseresult, function(node): syntax.CstStat?
+			return utils.isStatExpr(node) or utils.isStatAssign(node) or utils.isStatCompoundAssign(node)
+		end)
+		:forEach(function(statement)
+			starts[getPositionKey(statement.location)] = true
+		end)
+	return starts
+end
+
 local function transform(context: transformTypes.Context): syntaxTypes.Replacements
 	local replacements: syntaxTypes.Replacements = {}
+	local statementStarts = getStatementStarts(context.parseresult)
 	local calls = query.findAllFromRoot(context.parseresult, utils.isExprCall).nodes
 
 	-- The query lists each call before the calls inside it. Working backwards
 	-- rewrites the inner ones first, so when an outer call prints its receiver,
-	-- as in `string.lower(string.sub(name, 1, 1))`, the receiver already reads
-	-- `name:sub(1, 1)`.
+	-- as in `string.sub(string.upper(name), 1, 1)`, the receiver already reads
+	-- `name:upper()`.
 	for i = #calls, 1, -1 do
 		local call = calls[i]
 		local method = getStringMethodName(call)
@@ -87,9 +111,13 @@ local function transform(context: transformTypes.Context): syntaxTypes.Replaceme
 		end
 
 		local receiver = call.arguments[1]
-		local receiverText = printer.printNode(receiver, replacements):match("^%s*(.-)%s*$")
+		local receiverText = printer.printNode(receiver, replacements):gsub("^%s+", ""):gsub("%s+$", "")
 		if not isPrefixExpression(receiver) then
 			receiverText = `({receiverText})`
+		end
+
+		if receiverText:sub(1, 1) == "(" and statementStarts[getPositionKey(call.location)] then
+			continue
 		end
 
 		replacements[call.func] = `{receiverText}:{method}`
