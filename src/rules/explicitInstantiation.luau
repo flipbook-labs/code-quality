@@ -24,6 +24,21 @@ local function getLiteralCast(expr: syntax.CstExpr): syntax.CstExprTypeAssertion
 	return nil
 end
 
+-- A cast can also sit on a call's result, as in
+-- `table.freeze({ ... }) :: Metrics`. Functions like `table.freeze` return
+-- the table they're given, so casting the result sets the same type parameter
+-- that `table.freeze<<Metrics>>({ ... })` would.
+--
+-- The rule can't see the function's signature, so it goes by the call's shape
+-- instead. It flags a cast on a call whose only argument is a table
+-- constructor. That shape skips the common casts that narrow a result instead,
+-- like `FindFirstChild("Name") :: Part` or `setmetatable({}, Class) :: Class`.
+-- A cast on some other one-table call that isn't generic still gets flagged.
+local function isCastCallOnTable(cast: syntax.CstExprTypeAssertion): boolean
+	local call = utils.isExprCall(cast.operand)
+	return call ~= nil and #call.arguments == 1 and utils.isExprTable(call.arguments[1]) ~= nil
+end
+
 local function lint(cst: syntax.CstStatBlock, sourcepath: path.Path?): { types.LintViolation }
 	local violations: { types.LintViolation } = {}
 
@@ -41,6 +56,19 @@ local function lint(cst: syntax.CstStatBlock, sourcepath: path.Path?): { types.L
 				table.insert(violations, violation)
 				break
 			end
+		end
+	end)
+
+	query.findAllFromRoot(cst, utils.isExprTypeAssertion):forEach(function(cast)
+		if isCastCallOnTable(cast) then
+			local violation: types.LintViolation = {
+				lintname = NAME,
+				location = cast.location,
+				message = "Set the type parameter with explicit instantiation, as in `table.freeze<<Metrics>>({ ... })`, instead of casting the call's result.",
+				severity = "warning",
+				sourcepath = sourcepath,
+			}
+			table.insert(violations, violation)
 		end
 	end)
 
