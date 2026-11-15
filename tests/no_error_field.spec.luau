@@ -8,6 +8,14 @@ test.suite("no_error_field", function(suite)
 		assert.eq(#lintSource(rule, "return {\n\tok = false,\n\terror = message,\n}"), 1)
 	end)
 
+	suite:case("flags a bracketed `error` key in a table constructor", function(assert)
+		assert.eq(#lintSource(rule, 'return {\n\tok = false,\n\t["error"] = message,\n}'), 1)
+	end)
+
+	suite:case("leaves other bracketed keys alone", function(assert)
+		assert.eq(#lintSource(rule, 'return {\n\t["err"] = message,\n\t[key] = value,\n}'), 0)
+	end)
+
 	suite:case("flags an `error` property in a table type", function(assert)
 		assert.eq(#lintSource(rule, "type Result = {\n\tok: boolean,\n\terror: string?,\n}"), 1)
 	end)

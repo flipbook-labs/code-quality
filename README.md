@@ -16,7 +16,7 @@ The house Luau style is written down as prose in [agent-skills](https://github.c
 | `string_method_call`        | `value:find(...)` instead of `string.find(value, ...)`                                             |
 | `tostring_in_interpolation` | `` `got {value}` `` instead of `` `got {tostring(value)}` ``                                       |
 
-Every rule reports at warning severity. `no_any`, `tostring_in_interpolation`, and single-argument `explicit_instantiation` calls come with fixes that `lute lint --auto-fix` applies.
+Every rule reports at warning severity. `no_any` and `tostring_in_interpolation` come with fixes that `lute lint --auto-fix` applies.
 
 Explicit instantiation needs StyLua's `syntax = "Luau"` setting. Without it, StyLua can't parse `f<<T>>()`.
 
