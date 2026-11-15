@@ -43,6 +43,8 @@ rokit install
 lute setup
 ```
 
+Every pull request adds a change entry in `.changes/`, which [Changewrite](https://github.com/flipbook-labs/changewrite) turns into the changelog and the next version. [`.changes/README.md`](.changes/README.md) explains the format.
+
 Run the checks:
 
 ```sh
