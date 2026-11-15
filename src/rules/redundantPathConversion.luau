@@ -115,8 +115,10 @@ local function getModuleCall(call: syntax.CstExprCall, modules: { [syntax.CstLoc
 end
 
 -- Returns the wrapper's name, as the source writes it, when `expr` is a call
--- to `tostring(x)` or `path.format(x)`. The rule can't see what `x` is, so any
--- single argument counts.
+-- to `tostring(x)` or `path.format(x)`. The rule can't see what type `x` is, so
+-- most single arguments count. A number or boolean literal, as in
+-- `tostring(123)`, is the exception. It isn't a `Pathlike`, so that `tostring`
+-- is needed.
 local function getConversionName(expr: syntax.CstExpr, modules: { [syntax.CstLocal]: string }): string?
 	local call = utils.isExprCall(expr)
 	if not call or #call.arguments ~= 1 then
@@ -125,6 +127,10 @@ local function getConversionName(expr: syntax.CstExpr, modules: { [syntax.CstLoc
 
 	local global = utils.isExprGlobal(call.func)
 	if global and global.name.text == "tostring" then
+		local argument = unwrapGroups(call.arguments[1])
+		if utils.isExprConstantNumber(argument) or utils.isExprConstantBool(argument) then
+			return nil
+		end
 		return "tostring"
 	end
 

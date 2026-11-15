@@ -89,6 +89,18 @@ test.suite("redundant_path_conversion", function(suite)
 		assert.eq(#lintSource(rule, source), 0)
 	end)
 
+	suite:case("leaves `tostring` around a number literal alone", function(assert)
+		assert.eq(#lintSource(rule, FS .. "fs.exists(tostring(123))"), 0)
+	end)
+
+	suite:case("leaves `tostring` around a boolean literal alone", function(assert)
+		assert.eq(#lintSource(rule, FS .. "fs.exists(tostring(true))"), 0)
+	end)
+
+	suite:case("leaves `tostring` around a literal in parentheses alone", function(assert)
+		assert.eq(#lintSource(rule, FS .. "fs.exists(tostring((123)))"), 0)
+	end)
+
 	suite:case("leaves `tostring` with a base argument alone", function(assert)
 		assert.eq(#lintSource(rule, FS .. "fs.exists(tostring(a, b))"), 0)
 	end)
