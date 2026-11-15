@@ -46,6 +46,9 @@ local function getFieldChain(expr: syntax.CstExpr): FieldChain?
 	}
 end
 
+-- Every function's parameters count, not just the enclosing function's. A
+-- closure that copies `props.text` from an outer `props` is still aliasing an
+-- argument.
 local function collectParameters(cst: syntax.CstStatBlock): { [syntax.CstLocal]: true }
 	local parameters: { [syntax.CstLocal]: true } = {}
 	query.findAllFromRoot(cst, utils.isExprFunction):forEach(function(func)

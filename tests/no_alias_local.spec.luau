@@ -19,6 +19,12 @@ test.suite("no_alias_local", function(suite)
 		assert.eq(#lintSource(rule, source), 1)
 	end)
 
+	suite:case("flags a copy of a parameter captured from an outer function", function(assert)
+		local source =
+			"local function outer(props)\n\treturn function()\n\t\tlocal text = props.text\n\t\treturn text\n\tend\nend"
+		assert.eq(#lintSource(rule, source), 1)
+	end)
+
 	suite:case("flags each alias in a multiple assignment", function(assert)
 		local source = "local function f(props)\n\tlocal a, b = props.a, props.b\n\treturn a, b\nend"
 		assert.eq(#lintSource(rule, source), 2)
