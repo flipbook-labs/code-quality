@@ -32,11 +32,16 @@ Explicit instantiation needs StyLua's `syntax = "Luau"` setting. Without it, Sty
 
 ## Using the rules
 
-Point `lute lint` at the `src/rules` folder of the installed package:
+Point `lute lint` at the `src/rules` folder of the installed package. The package exports that folder's absolute path as `RULES_PATH`, so a Lute script doesn't need to know where Loom installed it:
 
-```sh
-lute lint --rules <package>/src/rules src
+```luau
+local CodeQuality = require("@luaupkg/CodeQuality@v0.3.0")
+local process = require("@std/process")
+
+process.run({ "lute", "lint", "--sequential", "--rules", CodeQuality.RULES_PATH, "src" })
 ```
+
+`--sequential` works around a crash in Lute's parallel linting (#27).
 
 ## Code mods
 
@@ -50,7 +55,7 @@ A code mod rewrites source in place, for a one-time migration or a fix too large
 
 ## Running a code mod
 
-Pass `lute transform` the mod and the files or folders to rewrite. Preview the changes with `--dry-run` first:
+Pass `lute transform` the mod and the files or folders to rewrite. `<package>` is the installed package's folder, two levels above `RULES_PATH`. Preview the changes with `--dry-run` first:
 
 ```sh
 lute transform <package>/src/mods/stringMethodCall.luau --dry-run src
