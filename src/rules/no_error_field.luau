@@ -25,8 +25,15 @@ local function lint(cst: syntax.CstStatBlock, sourcepath: path.Path?): { types.L
 
 	query.findAllFromRoot(cst, utils.isExprTable):forEach(function(tbl)
 		for _, entry in tbl.entries do
-			if entry.kind == "record" and entry.key.text == "error" then
-				table.insert(violations, createViolation(entry.key.location, sourcepath))
+			if entry.kind == "record" then
+				if entry.key.text == "error" then
+					table.insert(violations, createViolation(entry.key.location, sourcepath))
+				end
+			elseif entry.kind == "general" then
+				local key = utils.isExprConstantString(entry.key)
+				if key and key.value.text == "error" then
+					table.insert(violations, createViolation(key.location, sourcepath))
+				end
 			end
 		end
 	end)
