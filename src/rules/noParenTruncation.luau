@@ -4,6 +4,7 @@ local syntax = require("@std/syntax")
 local utils = require("@std/syntax/utils")
 
 local types = require("../types")
+local unwrapGroups = require("../lib/unwrapGroups")
 
 local NAME = "no_paren_truncation"
 
@@ -65,13 +66,7 @@ end
 -- `((f()))` truncates just like `(f())`, so nested parentheses are looked
 -- through to find the call.
 local function wrapsCall(group: syntax.CstExprGroup): boolean
-	local inner = group.expression
-	local nested = utils.isExprGroup(inner)
-	while nested do
-		inner = nested.expression
-		nested = utils.isExprGroup(inner)
-	end
-	return utils.isExprCall(inner) ~= nil
+	return utils.isExprCall(unwrapGroups(group.expression)) ~= nil
 end
 
 local function lint(cst: syntax.CstStatBlock, sourcepath: path.Path?): { types.LintViolation }
