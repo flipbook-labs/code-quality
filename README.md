@@ -32,11 +32,16 @@ Explicit instantiation needs StyLua's `syntax = "Luau"` setting. Without it, Sty
 
 ## Using the rules
 
-Point `lute lint` at the `src/rules` folder of the installed package:
+Point `lute lint` at the `src/rules` folder of the installed package. The package exports that folder's absolute path as `RULES_PATH`, so a Lute script doesn't need to know where Loom installed it:
 
-```sh
-lute lint --rules <package>/src/rules src
+```luau
+local CodeQuality = require("@luaupkg/CodeQuality@v0.3.0")
+local process = require("@std/process")
+
+process.run({ "lute", "lint", "--sequential", "--rules", CodeQuality.RULES_PATH, "src" })
 ```
+
+`--sequential` works around a crash in Lute's parallel linting (#27).
 
 ## Development
 
