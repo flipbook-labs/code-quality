@@ -1,0 +1,53 @@
+local test = require("@std/test")
+
+local lintSource = require("../../lib/lintSource")
+local rule = require("./robloxIncorrectColor3NewBounds")
+
+test.suite("roblox_incorrect_color3_new_bounds", function(suite)
+	suite:case("flags a component above 1 or below 0", function(assert)
+		assert.eq(#lintSource(rule, "Color3.new(255, 0, 0)"), 1)
+		assert.eq(#lintSource(rule, "Color3.new(-1, 0, 0)"), 1)
+		assert.eq(#lintSource(rule, "Color3.new(0, 0, 1.5)"), 1)
+		assert.eq(#lintSource(rule, "Color3.new(1e3, 0, 0)"), 1)
+	end)
+
+	suite:case("flags each out-of-range component", function(assert)
+		assert.eq(#lintSource(rule, "Color3.new(255, 255, 255)"), 3)
+		assert.eq(#lintSource(rule, "Color3.new(0, 2, 0)"), 1)
+	end)
+
+	suite:case("points at the argument", function(assert)
+		local violations = lintSource(rule, "Color3.new(255, 0, 0)")
+		assert.eq(violations[1].location.beginLine, 1)
+		assert.eq(violations[1].location.beginColumn, 12)
+		assert.eq(violations[1].location.endColumn, 15)
+	end)
+
+	suite:case("flags calls in any position, including as statements", function(assert)
+		assert.eq(#lintSource(rule, "local c = Color3.new(2, 0, 0)"), 1)
+		assert.eq(#lintSource(rule, "print(Color3.new(2, 0, 0))"), 1)
+		assert.eq(#lintSource(rule, "Color3.new(2, 0, 0)"), 1)
+	end)
+
+	suite:case("leaves in-range values alone", function(assert)
+		assert.eq(#lintSource(rule, "Color3.new(1, 0, 0)"), 0)
+		assert.eq(#lintSource(rule, "Color3.new(0.5, 0.25, 1)"), 0)
+		assert.eq(#lintSource(rule, "Color3.new(-0, 0, 1)"), 0)
+	end)
+
+	suite:case("leaves values it can't read as a number alone, as Selene does", function(assert)
+		assert.eq(#lintSource(rule, "Color3.new(255 / 255, 0, 0)"), 0)
+		assert.eq(#lintSource(rule, "Color3.new(0x1FF, 0, 0)"), 0)
+		assert.eq(#lintSource(rule, "Color3.new(a, b, c)"), 0)
+	end)
+
+	suite:case("leaves other constructors and methods alone", function(assert)
+		assert.eq(#lintSource(rule, "Color3.fromRGB(255, 0, 0)"), 0)
+		assert.eq(#lintSource(rule, "Color3:new(255, 0, 0)"), 0)
+		assert.eq(#lintSource(rule, "Color3.new 'x'"), 0)
+	end)
+
+	suite:case("leaves a local named Color3 alone", function(assert)
+		assert.eq(#lintSource(rule, "local Color3 = {}\nColor3.new(255, 0, 0)"), 0)
+	end)
+end)

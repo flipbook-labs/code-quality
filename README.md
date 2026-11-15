@@ -8,8 +8,20 @@ The house Luau style is written down as prose in [agent-skills](https://github.c
 
 The rules come in two folders:
 
-- `src/rules/lints` catches likely bugs, as a replacement for [Selene](https://github.com/Kampfkarren/selene). It has no rules yet.
-- `src/rules/style` enforces the house style. It holds these rules:
+- `src/rules/lints` catches likely bugs, as a replacement for [Selene](https://github.com/Kampfkarren/selene). Each rule is named after the Selene lint it ports and matches its behavior.
+- `src/rules/style` enforces the house style.
+
+### Lints
+
+| Rule | What it flags |
+| --- | --- |
+| `roblox_incorrect_color3_new_bounds` | `Color3.new` with a number outside 0 to 1, as in `Color3.new(255, 0, 0)`; use `Color3.fromRGB` |
+| `roblox_manual_fromscale_or_fromoffset` | A `UDim2.new` that sets only scale or only offset, which `UDim2.fromScale` or `UDim2.fromOffset` says more plainly |
+| `roblox_suspicious_udim2_new` | A `UDim2.new` call with one to three arguments, when it takes four |
+
+These rules only match the Roblox globals `Color3` and `UDim2`, so a local with the same name is left alone. Selene matches the name alone.
+
+### Style
 
 | Rule                        | What it asks for                                                                                       |
 | --------------------------- | ------------------------------------------------------------------------------------------------------ |
