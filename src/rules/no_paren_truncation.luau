@@ -62,13 +62,25 @@ local function collectMultiValueExprs(cst: syntax.CstStatBlock): { [syntax.CstEx
 	return exprs
 end
 
+-- `((f()))` truncates just like `(f())`, so nested parentheses are looked
+-- through to find the call.
+local function wrapsCall(group: syntax.CstExprGroup): boolean
+	local inner = group.expression
+	local nested = utils.isExprGroup(inner)
+	while nested do
+		inner = nested.expression
+		nested = utils.isExprGroup(inner)
+	end
+	return utils.isExprCall(inner) ~= nil
+end
+
 local function lint(cst: syntax.CstStatBlock, sourcepath: path.Path?): { types.LintViolation }
 	local multiValueExprs = collectMultiValueExprs(cst)
 
 	return query
 		.findAllFromRoot(cst, utils.isExprGroup)
 		:filter(function(group)
-			return multiValueExprs[group] == true and utils.isExprCall(group.expression) ~= nil
+			return multiValueExprs[group] == true and wrapsCall(group)
 		end)
 		:mapToArray(function(group): types.LintViolation?
 			return {

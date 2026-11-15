@@ -12,6 +12,10 @@ test.suite("no_paren_truncation", function(suite)
 		assert.eq(#lintSource(rule, "print((string.gsub(text, 'a', 'b')))"), 1)
 	end)
 
+	suite:case("flags a call in nested parentheses once", function(assert)
+		assert.eq(#lintSource(rule, "return ((f()))"), 1)
+	end)
+
 	suite:case("flags a parenthesized call at the end of a table list", function(assert)
 		assert.eq(#lintSource(rule, "local parts = { first, (f()) }"), 1)
 	end)
