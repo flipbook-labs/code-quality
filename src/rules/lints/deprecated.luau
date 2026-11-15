@@ -8,6 +8,7 @@ local getGlobalNamePath = require("../../lib/globalNamePath")
 local getReportLocation = require("../../lib/getReportLocation")
 local standardLibrary = require("../../lib/standardLibrary")
 local types = require("../../types")
+local unwrapGroups = require("../../lib/unwrapGroups")
 
 local NAME = "deprecated"
 
@@ -83,9 +84,16 @@ local function renderReplacement(template: string, values: { string }): string?
 end
 
 -- The argument as written in the source, without the whitespace around it.
+-- A replacement can put an operator next to it, as in `#%1`, so an argument
+-- built from operators is wrapped in parentheses: `table.getn(a or b)`
+-- becomes `#(a or b)`, not `#a or b`.
 local function sourceText(expr: syntax.CstExpr): string
 	local text = printer.printNode(expr)
-	return text:match("^%s*(.-)%s*$") or text
+	text = text:match("^%s*(.-)%s*$") or text
+	if expr.tag == "binary" or expr.tag == "unary" or expr.tag == "conditional" or expr.tag == "cast" then
+		return `({text})`
+	end
+	return text
 end
 
 local function lint(
@@ -143,7 +151,7 @@ local function lint(
 		if argumentNodes then
 			for index, argument in argumentNodes do
 				local parameterMessage = standardLibrary.getDeprecatedParameter(joined, index)
-				if parameterMessage and argumentTexts[index] ~= "nil" then
+				if parameterMessage and not utils.isExprConstantNil(unwrapGroups(argument)) then
 					report(argument.location, `This parameter is deprecated: {parameterMessage}`)
 				end
 			end
