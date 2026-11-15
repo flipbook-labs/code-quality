@@ -8,8 +8,19 @@ The house Luau style is written down as prose in [agent-skills](https://github.c
 
 The rules come in two folders:
 
-- `src/rules/lints` catches likely bugs, as a replacement for [Selene](https://github.com/Kampfkarren/selene). It has no rules yet.
-- `src/rules/style` enforces the house style. It holds these rules:
+- `src/rules/lints` catches likely bugs, as a replacement for [Selene](https://github.com/Kampfkarren/selene).
+- `src/rules/style` enforces the house style.
+
+### Lints
+
+| Rule         | What it flags |
+| ------------ | ------------- |
+| `deprecated` | Standard library functions and fields that are deprecated, such as `table.getn`, and deprecated parameters, such as the second argument to `Instance.new` |
+| `must_use`   | A standard library call whose return value is discarded, as in a `math.max(x, y)` statement |
+
+`deprecated` takes an `allow` option, a list of dotted paths to leave alone, such as `table.getn` or `table.*`. A path also allows everything under it.
+
+### Style
 
 | Rule                        | What it asks for                                                                                       |
 | --------------------------- | ------------------------------------------------------------------------------------------------------ |
