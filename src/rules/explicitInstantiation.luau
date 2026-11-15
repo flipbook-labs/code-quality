@@ -5,6 +5,7 @@ local utils = require("@std/syntax/utils")
 
 local isLiteral = require("../lib/isLiteral")
 local types = require("../types")
+local unwrapGroups = require("../lib/unwrapGroups")
 
 local NAME = "explicit_instantiation"
 
@@ -34,9 +35,11 @@ end
 -- constructor. That shape skips the common casts that narrow a result instead,
 -- like `FindFirstChild("Name") :: Part` or `setmetatable({}, Class) :: Class`.
 -- A cast on some other one-table call that isn't generic still gets flagged.
+-- Parentheses around the call or the table don't change what the cast means,
+-- so `(table.freeze({ ... })) :: Metrics` is flagged too.
 local function isCastCallOnTable(cast: syntax.CstExprTypeAssertion): boolean
-	local call = utils.isExprCall(cast.operand)
-	return call ~= nil and #call.arguments == 1 and utils.isExprTable(call.arguments[1]) ~= nil
+	local call = utils.isExprCall(unwrapGroups(cast.operand))
+	return call ~= nil and #call.arguments == 1 and utils.isExprTable(unwrapGroups(call.arguments[1])) ~= nil
 end
 
 local function lint(cst: syntax.CstStatBlock, sourcepath: path.Path?): { types.LintViolation }

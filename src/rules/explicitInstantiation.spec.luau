@@ -52,6 +52,14 @@ test.suite("explicit_instantiation", function(suite)
 		assert.eq(#lintSource(rule, "local items = store:wrap({}) :: { Item }"), 1)
 	end)
 
+	suite:case("flags a cast call wrapped in parentheses", function(assert)
+		assert.eq(#lintSource(rule, "local metrics = ((table.freeze({ height = 18 }))) :: ChipMetrics"), 1)
+	end)
+
+	suite:case("flags a cast call whose table is wrapped in parentheses", function(assert)
+		assert.eq(#lintSource(rule, "local metrics = table.freeze(({ height = 18 })) :: ChipMetrics"), 1)
+	end)
+
 	suite:case("leaves a cast on a call with a string argument alone", function(assert)
 		assert.eq(#lintSource(rule, 'local part = model:FindFirstChild("Handle") :: Part'), 0)
 	end)
