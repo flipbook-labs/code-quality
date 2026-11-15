@@ -14,4 +14,6 @@ end
 
 run({ "stylua", "--check", ".lute", "src" })
 run({ "selene", ".lute", "src" })
-run({ "lute", "lint", "--rules", "src/rules", ".lute", "src" })
+-- Lute's parallel linting can crash at random, which fails lint for no reason,
+-- so files are linted one at a time: https://github.com/luau-lang/lute/blob/v1.0.1-nightly.20260909/lute/runtime/src/runtime.cpp#L113-L117
+run({ "lute", "lint", "--sequential", "--rules", "src/rules", ".lute", "src" })
