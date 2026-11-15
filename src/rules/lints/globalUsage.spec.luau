@@ -34,6 +34,16 @@ test.suite("global_usage", function(suite)
 		assert.eq(#lintSource(rule, "_G = {}"), 1)
 	end)
 
+	suite:case("flags _G inside typeof in a type", function(assert)
+		local source = table.concat({
+			"type T = typeof(_G.foo)",
+			"local value: typeof(_G.bar) = nil",
+			"local cast = thing :: typeof(_G.baz)",
+			"local function f(x: typeof(_G.qux)) end",
+		}, "\n")
+		assert.eq(#lintSource(rule, source), 4)
+	end)
+
 	suite:case("leaves other globals alone", function(assert)
 		assert.eq(#lintSource(rule, "print(shared)\nlocal x = game.Workspace"), 0)
 	end)

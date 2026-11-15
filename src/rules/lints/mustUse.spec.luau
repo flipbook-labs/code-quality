@@ -27,6 +27,10 @@ test.suite("must_use", function(suite)
 		assert.eq(#lintSource(rule, "Vector3.new(1, 2, 3)"), 1)
 	end)
 
+	suite:case("flags a call with type arguments", function(assert)
+		assert.eq(#lintSource(rule, "table.clone<<{ string }>>(items)"), 1)
+	end)
+
 	suite:case("leaves a call whose result is used alone", function(assert)
 		local source = table.concat({
 			"local m = math.max(x, y)",

@@ -43,7 +43,9 @@ test.suite("lute lint", function(suite)
 	suite:case("reports a restricted module path inside a table type", function(assert)
 		-- The rule flags nothing without configuration, so this writes a
 		-- config file that restricts `game.Foo.Bar`.
-		local configPath = path.join(system.tmpdir(), "restricted-module-paths.config.luau")
+		-- Each run gets its own file, so overlapping runs don't delete each other's.
+		local configPath =
+			path.join(system.tmpdir(), `restricted-module-paths-{os.time()}-{math.random(1e9)}.config.luau`)
 		fs.writeStringToFile(
 			configPath,
 			'return { lute = { lint = { ruleconfigs = { restricted_module_paths = { options = { restricted_paths = { ["game.Foo.Bar"] = "Use Baz." } } } } } } }'

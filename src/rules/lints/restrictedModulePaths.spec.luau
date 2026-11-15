@@ -58,6 +58,14 @@ test.suite("restricted_module_paths", function(suite)
 		assert.eq(#lintSource(rule, "Audio.play(sound)", options), 1)
 	end)
 
+	suite:case("flags a call with type arguments", function(assert)
+		assert.eq(#lintSource(rule, "OldLibrary.Utils.deprecatedFunction<<number>>()", OPTIONS), 1)
+	end)
+
+	suite:case("flags a path inside type arguments", function(assert)
+		assert.eq(#lintSource(rule, "f<<typeof(OldLibrary.Utils.deprecatedFunction)>>()", OPTIONS), 1)
+	end)
+
 	suite:case("flags a bare restricted name", function(assert)
 		local options = { restricted_paths = { legacy = "Gone." } }
 		assert.eq(#lintSource(rule, "local x = legacy", options), 1)

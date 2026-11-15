@@ -53,6 +53,7 @@ end
 
 -- Builds the dotted path Selene matches. It reads names up to the first call,
 -- since a call's result isn't a module path, and gives up on a bracket index.
+-- Type arguments, as in `a.b<<T>>()`, don't change the path, so they're skipped.
 -- Returns the path and the first call, if there is one before it stops.
 local function pathOf(root: syntax.CstExpr, suffixes: { syntax.CstExpr }): (string?, syntax.CstExprCall?)
 	local names: { string } = {}
@@ -69,6 +70,8 @@ local function pathOf(root: syntax.CstExpr, suffixes: { syntax.CstExpr }): (stri
 			table.insert(names, suffix.index.text)
 		elseif suffix.tag == "call" then
 			return table.concat(names, "."), suffix
+		elseif suffix.tag == "instantiate" then
+			continue
 		else
 			return nil, nil
 		end
@@ -93,7 +96,8 @@ local function lint(
 	local violations: { types.LintViolation } = {}
 
 	-- Visits the parts of a chain other than its path: call arguments, bracket
-	-- indexes, and the start if it's not a name.
+	-- indexes, type arguments, and the start if it's not a name. Type arguments
+	-- can hold paths too, as in `f<<typeof(a.b)>>()`.
 	local visitor = visitorLib.create()
 
 	local function visitChildren(root: syntax.CstExpr, suffixes: { syntax.CstExpr })
@@ -104,6 +108,10 @@ local function lint(
 				end
 			elseif suffix.tag == "index" then
 				visitorLib.visitExpression(suffix.index, visitor)
+			elseif suffix.tag == "instantiate" then
+				for _, typeArgument in suffix.typeArguments do
+					visitorLib.visit(typeArgument, visitor)
+				end
 			end
 		end
 		if root.tag ~= "global" and root.tag ~= "local" then

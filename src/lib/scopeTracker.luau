@@ -1,4 +1,5 @@
 local syntax = require("@std/syntax")
+local visitorLib = require("@std/syntax/visitor")
 
 -- Tracks which names are in scope at each point of a file, as Selene's
 -- ScopeManager does, so the lints that depend on scope flag what Selene flags.
@@ -131,6 +132,21 @@ local function analyze(cst: syntax.CstStatBlock): Analysis
 	local walkBlock: (block: syntax.CstStatBlock) -> ()
 	local walkFunction: (func: syntax.CstExprFunction, selfLocation: syntax.Span?) -> ()
 
+	-- Types can hold expressions through `typeof(...)`, as in
+	-- `local x: typeof(_G.foo)`. This walks those expressions with the bindings
+	-- in scope where the type is written.
+	local typeofVisitor = visitorLib.create()
+	function typeofVisitor.visitTypeTypeof(node: syntax.CstTypeTypeof): boolean
+		walkExpr(node.expression, false)
+		return false
+	end
+
+	local function walkTypes(node: syntax.CstNode?)
+		if node then
+			visitorLib.visit(node, typeofVisitor)
+		end
+	end
+
 	-- `underCall` is true when the expression is the function of a call. Selene
 	-- records no indexing for those, so the first field isn't kept.
 	local function walkChainBase(base: syntax.CstExpr, firstIndex: string?, underCall: boolean)
@@ -158,6 +174,9 @@ local function analyze(cst: syntax.CstStatBlock): Analysis
 			end
 		elseif expr.tag == "instantiate" then
 			walkExpr(expr.expr, underCall)
+			for _, typeArgument in expr.typeArguments do
+				walkTypes(typeArgument)
+			end
 		elseif expr.tag == "function" then
 			walkFunction(expr, nil)
 		elseif expr.tag == "table" then
@@ -167,8 +186,11 @@ local function analyze(cst: syntax.CstStatBlock): Analysis
 				end
 				walkExpr(item.value, false)
 			end
-		elseif expr.tag == "unary" or expr.tag == "cast" then
+		elseif expr.tag == "unary" then
 			walkExpr(expr.operand, false)
+		elseif expr.tag == "cast" then
+			walkExpr(expr.operand, false)
+			walkTypes(expr.annotation)
 		elseif expr.tag == "binary" then
 			walkExpr(expr.lhsOperand, false)
 			walkExpr(expr.rhsOperand, false)
@@ -195,6 +217,11 @@ local function analyze(cst: syntax.CstStatBlock): Analysis
 		for _, parameter in func.parameters do
 			declare(parameter.name.text, parameter.name.location)
 		end
+		for _, parameter in func.parameters do
+			walkTypes(parameter.annotation)
+		end
+		walkTypes(func.varargAnnotation)
+		walkTypes(func.returnAnnotation)
 		walkStatements(func.body)
 		popScope()
 	end
@@ -243,6 +270,9 @@ local function analyze(cst: syntax.CstStatBlock): Analysis
 			-- Values are read before any of the names exist.
 			for _, value in stat.values do
 				walkExpr(value, false)
+			end
+			for _, variable in stat.variables do
+				walkTypes(variable.annotation)
 			end
 			for _, variable in stat.variables do
 				declare(variable.name.text, variable.name.location)
@@ -309,6 +339,8 @@ local function analyze(cst: syntax.CstStatBlock): Analysis
 			walkFunction(stat.func, nil)
 		elseif stat.tag == "typefunction" then
 			walkFunction(stat.body, nil)
+		elseif stat.tag == "typealias" then
+			walkTypes(stat)
 		end
 	end
 
