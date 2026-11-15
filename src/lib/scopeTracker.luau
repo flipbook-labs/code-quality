@@ -141,15 +141,6 @@ local function analyze(cst: syntax.CstStatBlock): Analysis
 		end
 	end
 
-	local function walkConditionBranch(conditionLocal: syntax.CstLocal?, block: syntax.CstStatBlock)
-		pushScope()
-		if conditionLocal then
-			declare(conditionLocal.name.text, conditionLocal.name.location)
-		end
-		walkStatements(block)
-		popScope()
-	end
-
 	walkExpr = function(expr: syntax.CstExpr, underCall: boolean)
 		if expr.tag == "group" then
 			walkExpr(expr.expression, false)
@@ -187,20 +178,10 @@ local function analyze(cst: syntax.CstStatBlock): Analysis
 			end
 		elseif expr.tag == "conditional" then
 			walkExpr(expr.condition, false)
-			pushScope()
-			if expr.conditionLocal then
-				declare(expr.conditionLocal.name.text, expr.conditionLocal.name.location)
-			end
 			walkExpr(expr.thenExpr, false)
-			popScope()
 			for _, branch in expr.elseifs do
 				walkExpr(branch.condition, false)
-				pushScope()
-				if branch.conditionLocal then
-					declare(branch.conditionLocal.name.text, branch.conditionLocal.name.location)
-				end
 				walkExpr(branch.thenExpr, false)
-				popScope()
 			end
 			walkExpr(expr.elseExpr, false)
 		end
@@ -235,10 +216,10 @@ local function analyze(cst: syntax.CstStatBlock): Analysis
 			walkBlock(stat.body)
 		elseif stat.tag == "conditional" then
 			walkExpr(stat.condition, false)
-			walkConditionBranch(stat.conditionLocal, stat.thenBlock)
+			walkBlock(stat.thenBlock)
 			for _, branch in stat.elseifs do
 				walkExpr(branch.condition, false)
-				walkConditionBranch(branch.conditionLocal, branch.thenBlock)
+				walkBlock(branch.thenBlock)
 			end
 			if stat.elseBlock then
 				walkBlock(stat.elseBlock)
