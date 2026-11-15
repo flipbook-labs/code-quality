@@ -17,8 +17,13 @@ test.suite("redundant_path_conversion", function(suite)
 		assert.eq(#lintSource(rule, FS .. PATH .. "fs.exists(tostring(path.join(root, 'file.txt')))"), 1)
 	end)
 
-	suite:case("flags `tostring` around a local annotated `Path`", function(assert)
-		assert.eq(#lintSource(rule, FS .. "local file: Path = getFile()\nfs.exists(tostring(file))"), 1)
+	suite:case("flags `tostring` around a local annotated `path.Path`", function(assert)
+		assert.eq(#lintSource(rule, FS .. PATH .. "local file: path.Path = getFile()\nfs.exists(tostring(file))"), 1)
+	end)
+
+	suite:case("flags `tostring` around a bare `Path` aliased to `path.Path`", function(assert)
+		local source = FS .. PATH .. "type Path = path.Path\nlocal file: Path = getFile()\nfs.exists(tostring(file))"
+		assert.eq(#lintSource(rule, source), 1)
 	end)
 
 	suite:case("flags `tostring` around a parameter annotated `path.Path`", function(assert)
@@ -39,7 +44,9 @@ test.suite("redundant_path_conversion", function(suite)
 	end)
 
 	suite:case("flags both paths of a two-path function", function(assert)
-		local source = FS .. "local from: Path, to: Path = getFrom(), getTo()\nfs.copy(tostring(from), tostring(to))"
+		local source = FS
+			.. PATH
+			.. "local from: path.Path, to: path.Path = getFrom(), getTo()\nfs.copy(tostring(from), tostring(to))"
 		assert.eq(#lintSource(rule, source), 2)
 	end)
 
@@ -103,7 +110,23 @@ test.suite("redundant_path_conversion", function(suite)
 	end)
 
 	suite:case("leaves `tostring` around an optional `Path` alone", function(assert)
-		assert.eq(#lintSource(rule, FS .. "local file: Path? = getFile()\nfs.exists(tostring(file))"), 0)
+		assert.eq(#lintSource(rule, FS .. PATH .. "local file: path.Path? = getFile()\nfs.exists(tostring(file))"), 0)
+	end)
+
+	suite:case("leaves `tostring` around a bare `Path` with no alias alone", function(assert)
+		assert.eq(#lintSource(rule, FS .. PATH .. "local file: Path = getFile()\nfs.exists(tostring(file))"), 0)
+	end)
+
+	suite:case("leaves `tostring` around a bare `Path` aliased to another type alone", function(assert)
+		local source = FS
+			.. PATH
+			.. "type Path = { parts: { string } }\nlocal file: Path = getFile()\nfs.exists(tostring(file))"
+		assert.eq(#lintSource(rule, source), 0)
+	end)
+
+	suite:case("leaves `tostring` around a bare `Path` aliased to another module's type alone", function(assert)
+		local source = FS .. PATH .. "type Path = other.Path\nlocal file: Path = getFile()\nfs.exists(tostring(file))"
+		assert.eq(#lintSource(rule, source), 0)
 	end)
 
 	suite:case("leaves `tostring` around a reassigned path local alone", function(assert)

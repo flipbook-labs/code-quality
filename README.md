@@ -30,7 +30,7 @@ Every rule reports at warning severity. To silence one on a statement, put `-- l
 
 `explicit_instantiation` also flags a cast on the result of a call whose only argument is a table constructor. It asks for `table.freeze<<Metrics>>({ ... })` instead of `table.freeze({ ... }) :: Metrics`.
 
-`redundant_path_conversion` checks the paths passed to `@std/fs` and `@std/path` functions, matched through whatever local `require` binds them to. It flags `path.format` around any value, but `tostring` only around a value the source shows is a `Path`: an `@std/path` call that returns one, a local or parameter annotated `Path` or `path.Path`, or a local set from such a call and never reassigned. A `tostring` around anything else, like `fs.exists(tostring(123))`, may be needed, so it's left alone. The `cwd` option of `process.run` only accepts a string, so it's left alone too.
+`redundant_path_conversion` checks the paths passed to `@std/fs` and `@std/path` functions, matched through whatever local `require` binds them to. It flags `path.format` around any value, but `tostring` only around a value the source shows is a `Path`: an `@std/path` call that returns one, a local or parameter annotated `path.Path` (or a bare `Path` when the file declares `type Path = path.Path`), or a local set from such a call and never reassigned. A `tostring` around anything else, like `fs.exists(tostring(123))`, may be needed, so it's left alone. The `cwd` option of `process.run` only accepts a string, so it's left alone too.
 
 Explicit instantiation needs StyLua's `syntax = "Luau"` setting. Without it, StyLua can't parse `f<<T>>()`.
 

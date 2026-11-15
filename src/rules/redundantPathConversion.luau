@@ -142,47 +142,74 @@ local function isPathCall(expr: syntax.CstExpr, modules: { [syntax.CstLocal]: st
 	return moduleCall ~= nil and moduleCall.module == "@std/path" and PATH_RETURNING[moduleCall.name] == true
 end
 
--- Whether `annotation` is `Path`, or `Path` read off an `@std/path` local, as
--- in `path.Path`. The prefix is matched by name against the file's
--- `@std/path` locals, since a type's prefix isn't linked to a local in the
--- syntax tree. An optional `Path?` doesn't count, since it may be `nil`.
-local function isPathAnnotation(annotation: syntax.CstType?, modules: { [syntax.CstLocal]: string }): boolean
-	local reference = if annotation then utils.isTypeReference(annotation) else nil
-	if not reference or reference.name.text ~= "Path" or reference.parameters then
+-- Whether `reference` is `Path` read off an `@std/path` local, as in
+-- `path.Path`. The prefix is matched by name against the file's `@std/path`
+-- locals, since a type's prefix isn't linked to a local in the syntax tree.
+local function isModulePathType(reference: syntax.CstTypeReference, modules: { [syntax.CstLocal]: string }): boolean
+	if not reference.prefix or reference.name.text ~= "Path" or reference.parameters then
 		return false
 	end
-	local prefix = reference.prefix
-	if not prefix then
-		return true
-	end
 	for variable, module in modules do
-		if module == "@std/path" and variable.name.text == prefix.text then
+		if module == "@std/path" and variable.name.text == reference.prefix.text then
 			return true
 		end
 	end
 	return false
 end
 
+-- A bare `Path` could name any type, so it only counts as a path when the file
+-- declares it as `@std/path`'s, as in `type Path = path.Path`.
+local function hasPathAlias(cst: syntax.CstStatBlock, modules: { [syntax.CstLocal]: string }): boolean
+	return #query.findAllFromRoot(cst, utils.isStatTypeAlias):filter(function(alias)
+		local reference = utils.isTypeReference(alias.type)
+		return alias.name.text == "Path"
+			and alias.generics == nil
+			and reference ~= nil
+			and isModulePathType(reference, modules)
+	end).nodes > 0
+end
+
+-- Whether `annotation` is `path.Path`, or a bare `Path` when the file aliases
+-- it to `path.Path`. An optional `Path?` doesn't count, since it may be `nil`.
+local function isPathAnnotation(
+	annotation: syntax.CstType?,
+	modules: { [syntax.CstLocal]: string },
+	bareIsPath: boolean
+): boolean
+	local reference = if annotation then utils.isTypeReference(annotation) else nil
+	if not reference then
+		return false
+	end
+	if reference.prefix == nil then
+		return bareIsPath and reference.name.text == "Path" and reference.parameters == nil
+	end
+	return isModulePathType(reference, modules)
+end
+
 -- Collects the locals and parameters that visibly hold a `Path`: those
--- annotated `Path`, and locals set from an `@std/path` call that returns one.
+-- annotated as one, and locals set from an `@std/path` call that returns one.
 local function collectPathLocals(
 	cst: syntax.CstStatBlock,
 	modules: { [syntax.CstLocal]: string },
 	reassigned: { [syntax.CstLocal]: true }
 ): { [syntax.CstLocal]: true }
+	local bareIsPath = hasPathAlias(cst, modules)
 	local pathLocals: { [syntax.CstLocal]: true } = {}
 	query.findAllFromRoot(cst, utils.isStatLocal):forEach(function(statement)
 		for index, variable in statement.variables do
 			local value = statement.values[index]
 			local fromPathCall = value ~= nil and isPathCall(value, modules)
-			if not reassigned[variable] and (fromPathCall or isPathAnnotation(variable.annotation, modules)) then
+			if
+				not reassigned[variable]
+				and (fromPathCall or isPathAnnotation(variable.annotation, modules, bareIsPath))
+			then
 				pathLocals[variable] = true
 			end
 		end
 	end)
 	query.findAllFromRoot(cst, utils.isExprFunction):forEach(function(func)
 		for _, parameter in func.parameters do
-			if not reassigned[parameter] and isPathAnnotation(parameter.annotation, modules) then
+			if not reassigned[parameter] and isPathAnnotation(parameter.annotation, modules, bareIsPath) then
 				pathLocals[parameter] = true
 			end
 		end
