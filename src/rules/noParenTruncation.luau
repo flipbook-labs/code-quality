@@ -3,8 +3,8 @@ local query = require("@std/syntax/query")
 local syntax = require("@std/syntax")
 local utils = require("@std/syntax/utils")
 
-local unwrapGroups = require("../lib/unwrapGroups")
 local types = require("../types")
+local unwrapGroups = require("../lib/unwrapGroups")
 
 local NAME = "no_paren_truncation"
 
