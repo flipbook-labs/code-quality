@@ -3,4 +3,4 @@ bump: minor
 category: Features
 ---
 
-Add the first set of shared Luau lint rules, and release the package with Changewrite.
+Add the first shared Luau lint rules. The README lists each one and what it asks for.
