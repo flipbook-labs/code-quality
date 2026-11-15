@@ -110,6 +110,18 @@ test.suite("stringMethodCall code mod", function(suite)
 		)
 	end)
 
+	suite:case("leaves a call with a comment inside its function name alone", function(assert)
+		local source = "local part = string --[[note]].sub(text, 1, 2)\nlocal other = string.--[[note]]sub(text, 1, 2)"
+		assert.eq(transformSource(migration, source), source)
+	end)
+
+	suite:case("keeps comments before and after the call", function(assert)
+		assert.eq(
+			transformSource(migration, "local part = --[[note]] string.sub(text, 1, 2) -- trailing"),
+			"local part = --[[note]] text:sub(1, 2) -- trailing"
+		)
+	end)
+
 	suite:case("leaves a call with a comment around its first argument alone", function(assert)
 		local source = "local part = string.sub(\n\ttext, -- the label\n\t1,\n\t2\n)"
 		assert.eq(transformSource(migration, source), source)

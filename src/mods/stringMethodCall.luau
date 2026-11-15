@@ -65,8 +65,24 @@ local function canRewrite(call: syntax.CstExprCall): boolean
 		return false
 	end
 
-	-- The rewrite drops the whitespace around the first argument and its comma.
-	-- A comment there would go with it, so those calls are left alone.
+	-- The rewrite replaces `string.find` as a whole, keeping only what comes
+	-- before `string` and after `find`. A comment in between, as in
+	-- `string --[[note]].find`, would be dropped.
+	local index = utils.isExprIndexName(call.func)
+	local base = if index then utils.isExprGlobal(index.expression) else nil
+	if
+		not index
+		or not base
+		or hasComment(base.name.trailingTrivia)
+		or hasComment(index.accessor.leadingTrivia)
+		or hasComment(index.accessor.trailingTrivia)
+		or hasComment(index.index.leadingTrivia)
+	then
+		return false
+	end
+
+	-- The rewrite also drops the whitespace around the first argument and its
+	-- comma. A comment there would go with it, so those calls are left alone.
 	local separator = call.arguments.separators[1]
 	return not hasComment(trivia.leftmostTrivia(receiver))
 		and not hasComment(trivia.rightmostTrivia(receiver))
