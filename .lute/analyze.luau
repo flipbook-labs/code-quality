@@ -12,6 +12,7 @@ local result = process.run({
 	"--flag:LuauSolverV2=true",
 	"--settings=.vscode/settings.json",
 	".lute",
+	"src",
 }, {
 	stdio = "inherit",
 })
