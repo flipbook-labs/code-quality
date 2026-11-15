@@ -52,27 +52,12 @@ local function identName(expr: syntax.CstExpr): string?
 	return nil
 end
 
--- The name a call's chain starts from, so `a.b(x)` gives `a`, the way Selene's
--- prefix does. Nil when the chain starts from something that isn't a name.
-local function calleeRoot(expr: syntax.CstExpr): string?
-	local node = expr
-	while true do
-		if node.tag == "call" then
-			node = node.func
-		elseif node.tag == "indexname" or node.tag == "index" then
-			node = node.expression
-		elseif node.tag == "instantiate" then
-			node = node.expr
-		else
-			break
-		end
-	end
-	return identName(node)
-end
-
--- The iterable a loop copies from, following Selene's shapes: `pairs(t)`,
--- `ipairs(t)`, `next, t`, or any other expression. Returns nil for other loop
--- heads, such as `for k, v in a, pairs(b)`.
+-- The iterable a loop copies from: `pairs(t)`, `ipairs(t)`, `next, t`, or a
+-- plain `t`. Returns nil for other loop heads, such as `for k, v in a, pairs(b)`.
+--
+-- Selene also treats a loop over any other call as copying the call's result.
+-- That call might return an iterator, as `string.gmatch` does, and then
+-- `table.clone` would throw, so this rule leaves those loops alone.
 local function loopSource(values: Items<syntax.CstExpr>): LoopSource?
 	if #values == 1 then
 		local value = firstItem(values)
@@ -88,20 +73,14 @@ local function loopSource(values: Items<syntax.CstExpr>): LoopSource?
 			}
 		end
 
-		local root = calleeRoot(call)
-		if root == nil then
-			return nil
-		end
+		local root = identName(call.func)
 		if root ~= "pairs" and root ~= "ipairs" then
-			return {
-				isIpairs = false,
-				expr = value,
-			}
+			return nil
 		end
 
 		-- `pairs` and `ipairs` only count when called as exactly `pairs(t)`.
 		local argument = firstItem(call.arguments)
-		local plainCall = not call.self and call.openParens ~= nil and identName(call.func) == root
+		local plainCall = not call.self and call.openParens ~= nil
 		if not plainCall or #call.arguments ~= 1 or argument == nil then
 			return nil
 		end

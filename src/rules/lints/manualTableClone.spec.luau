@@ -27,6 +27,24 @@ test.suite("manual_table_clone", function(suite)
 		)
 	end)
 
+	suite:case("leaves a loop over any other call, which might return an iterator", function(assert)
+		local source = table.concat({
+			"local new = {}",
+			"for key, value in string.gmatch(text, '(%w+)=(%w+)') do",
+			"\tnew[key] = value",
+			"end",
+			"local other = {}",
+			"for key, value in text:gmatch('(%w+)=(%w+)') do",
+			"\tother[key] = value",
+			"end",
+			"local copy = {}",
+			"for key, value in getStuff() do",
+			"\tcopy[key] = value",
+			"end",
+		}, "\n")
+		assert.eq(#lintSource(rule, source), 0)
+	end)
+
 	suite:case("flags a copy whose table is used after the loop", function(assert)
 		assert.eq(
 			#lintSource(
