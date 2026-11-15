@@ -28,6 +28,26 @@ test.suite("string_union_enum", function(suite)
 		assert.eq(#lintSource(rule, source), 0)
 	end)
 
+	suite:case("leaves a union alone when the frozen table uses string keys", function(assert)
+		local source = table.concat({
+			'export type Bump = "major" | "minor" | "patch"',
+			"local Bump = table.freeze({",
+			'	["major-release"] = "major",',
+			'	["minor-release"] = "minor",',
+			'	["patch-release"] = "patch",',
+			"})",
+		}, "\n")
+		assert.eq(#lintSource(rule, source), 0)
+	end)
+
+	suite:case("flags a union when the frozen table has computed keys", function(assert)
+		local source = table.concat({
+			'export type Bump = "major" | "minor" | "patch"',
+			'local Bump = table.freeze({ [MAJOR] = "major", [MINOR] = "minor", [PATCH] = "patch" })',
+		}, "\n")
+		assert.eq(#lintSource(rule, source), 1)
+	end)
+
 	suite:case("flags a union when the frozen table's values differ", function(assert)
 		local source = table.concat({
 			'export type Bump = "major" | "minor" | "patch"',
