@@ -1,7 +1,17 @@
-categories = ["Features", "Fixes", "Changes"]
+categories = ["Features", "Fixes", "Changes", "Internal"]
+collapsed = ["Internal"]
 
 [version]
-current = "0.1.0"
+current = "0.2.0"
 mirror = [
-  { file = "loom.config.luau" },
+  { file = "pkg.luau", pattern = 'version%s*=%s*"([^"]+)"' },
 ]
+
+[kind]
+rules = { text = "Lint rules", color = "#0969da" }
+mods = { text = "Code mods", color = "#8250df" }
+packaging = { text = "Packaging", color = "#7a7444" }
+docs = { text = "Docs", color = "#8a5a2b" }
+tooling = { text = "Tooling", color = "#4e8079" }
+ci = { text = "CI", color = "#75659a" }
+release = { text = "Release", color = "#94606f" }
