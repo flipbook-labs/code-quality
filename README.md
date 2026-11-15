@@ -38,6 +38,27 @@ Point `lute lint` at the `src/rules` folder of the installed package:
 lute lint --rules <package>/src/rules src
 ```
 
+## Code mods
+
+A code mod rewrites source in place, for a one-time migration or a fix too large for a lint autofix. Mods live in `src/mods` and run under `lute transform`.
+
+| Mod                | What it does                                            |
+| ------------------ | ------------------------------------------------------- |
+| `stringMethodCall` | Rewrites `string.find(value, ...)` as `value:find(...)` |
+
+`stringMethodCall` fixes what `string_method_call` flags. It leaves a few calls alone because rewriting them could change what the code does: a first argument that's a non-string literal, a call or `...` passed as the only argument, which may hand over several values, and a call with a comment beside its first argument. The rule still flags those, so lint afterwards to find any that need a hand edit.
+
+## Running a code mod
+
+Pass `lute transform` the mod and the files or folders to rewrite. Preview the changes with `--dry-run` first:
+
+```sh
+lute transform <package>/src/mods/stringMethodCall.luau --dry-run src
+lute transform <package>/src/mods/stringMethodCall.luau src
+```
+
+A mod keeps the rest of each file as written but doesn't reformat the code it changes. Run your formatter afterwards, then the repo's own checks, before you commit.
+
 ## Development
 
 Install the toolchain with [Rokit](https://github.com/rojo-rbx/rokit), then fetch the Lute typedefs:
@@ -58,3 +79,12 @@ lute test
 ```
 
 Each rule lives in `src/rules` with a spec beside it that runs the rule over snippets of source. `lute lint --rules` loads every file in that folder and skips the ones that don't return a rule, so the specs ship with the rules and load in any repo that runs them. Keep their requires relative, since a repo alias like `@repo` won't resolve there. Shared helpers go in `src/lib`.
+
+### Adding a rule
+
+1. Add `src/rules/<ruleName>.luau`. It returns a frozen `types.LintRule` from `src/types.luau`: a `name` in snake case and a `lint` function that takes the parsed file and returns its violations. Find nodes with `@std/syntax/query` and match them with the `is*` helpers in `@std/syntax/utils`, as the existing rules do. Write against the typedefs for the pinned Lute version in `~/.lute/typedefs`.
+2. Add `src/rules/<ruleName>.spec.luau`. Run snippets through `src/lib/lintSource.luau` and assert on the violations. Cover the code the rule flags and the nearby code it leaves alone.
+3. If the rule reports inside a table type, report at `getReportLocation`'s location instead, and add a case to `src/lib/getReportLocation.lute.spec.luau`. Its comment explains why.
+4. Add a row to the rules table above, and a change entry in `.changes/`.
+
+A code mod follows the same pattern in `src/mods`. It returns a frozen table with a `transform` function, which takes the file's parse result and returns replacements for the nodes it rewrites. Its spec runs snippets through `src/lib/transformSource.luau` and compares the rewritten source. When a mod fixes what a rule flags, share the matching code through `src/lib`, as `stringMethodCall` does with `getStringMethodName`.
