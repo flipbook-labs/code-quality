@@ -2,7 +2,7 @@ categories = ["Features", "Fixes", "Changes", "Internal"]
 collapsed = ["Internal"]
 
 [version]
-current = "0.1.0"
+current = "0.2.0"
 mirror = [
   { file = "pkg.luau", pattern = 'version%s*=%s*"([^"]+)"' },
 ]
