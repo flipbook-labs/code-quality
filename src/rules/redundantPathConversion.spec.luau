@@ -46,6 +46,28 @@ test.suite("redundant_path_conversion", function(suite)
 		assert.eq(if fix then fix.fix else nil, "root / name")
 	end)
 
+	suite:case("offers no fix when the last argument wraps a call", function(assert)
+		local violations = lintSource(rule, PATH .. "path.join(root, tostring(getParts()))")
+		assert.eq(#violations, 1)
+		assert.eq(violations[1].suggestedfix, nil)
+	end)
+
+	suite:case("offers no fix when the last argument wraps `...`", function(assert)
+		local violations = lintSource(rule, FS .. "fs.exists(tostring(...))")
+		assert.eq(#violations, 1)
+		assert.eq(violations[1].suggestedfix, nil)
+	end)
+
+	suite:case("still fixes a wrapped call before the last argument", function(assert)
+		local violations = lintSource(rule, FS .. "fs.copy(tostring(getSource()), target)")
+		local fix = violations[1].suggestedfix
+		assert.eq(if fix then fix.fix else nil, "getSource()")
+	end)
+
+	suite:case("leaves a reassigned module local alone", function(assert)
+		assert.eq(#lintSource(rule, FS .. "fs = wrapper\nfs.exists(tostring(file))"), 0)
+	end)
+
 	suite:case("leaves a bare path alone", function(assert)
 		assert.eq(#lintSource(rule, FS .. "fs.exists(file)"), 0)
 	end)

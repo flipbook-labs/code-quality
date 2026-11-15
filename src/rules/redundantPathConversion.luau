@@ -57,8 +57,19 @@ local PATHLIKE_PARAMETERS: { [string]: { [string]: number } } = {
 -- Code can bind a module to any name, as in `local pathlib = require("@std/path")`,
 -- so calls are matched by the local they go through rather than its name.
 -- This maps each local bound to `require("@std/fs")` or `require("@std/path")`
--- to that require string.
+-- to that require string. A local that's assigned again later may no longer
+-- hold the module, so it's left out.
 local function collectModuleLocals(cst: syntax.CstStatBlock): { [syntax.CstLocal]: string }
+	local reassigned: { [syntax.CstLocal]: true } = {}
+	query.findAllFromRoot(cst, utils.isStatAssign):forEach(function(assign)
+		for _, target in assign.variables do
+			local variable = utils.isExprLocal(target)
+			if variable then
+				reassigned[variable["local"]] = true
+			end
+		end
+	end)
+
 	local modules: { [syntax.CstLocal]: string } = {}
 	query.findAllFromRoot(cst, utils.isStatLocal):forEach(function(statement)
 		for index, variable in statement.variables do
@@ -67,7 +78,7 @@ local function collectModuleLocals(cst: syntax.CstStatBlock): { [syntax.CstLocal
 			local func = if call then utils.isExprGlobal(call.func) else nil
 			if call and func and func.name.text == "require" and #call.arguments == 1 then
 				local argument = utils.isExprConstantString(call.arguments[1])
-				if argument and PATHLIKE_PARAMETERS[argument.value.text] then
+				if argument and PATHLIKE_PARAMETERS[argument.value.text] and not reassigned[variable] then
 					modules[variable] = argument.value.text
 				end
 			end
@@ -125,6 +136,20 @@ local function getConversionName(expr: syntax.CstExpr, modules: { [syntax.CstLoc
 	return nil
 end
 
+-- Removing the wrapper can change what the outer call receives. `tostring`
+-- passes along one value, but a call or `...` in the last argument passes along
+-- all of its values. If `getPaths` returns two paths, `fs.copy(tostring(getPaths()))`
+-- passes only the first, but `fs.copy(getPaths())` passes both. Those still get
+-- reported, without a fix.
+local function canRemoveWrapper(call: syntax.CstExprCall, position: number, conversionCall: syntax.CstExprCall): boolean
+	local argument = call.arguments[position]
+	if position < #call.arguments or unwrapGroups(argument) ~= argument then
+		return true
+	end
+	local inner = conversionCall.arguments[1]
+	return utils.isExprCall(inner) == nil and utils.isExprVarargs(inner) == nil
+end
+
 local function lint(cst: syntax.CstStatBlock, sourcepath: path.Path?): { types.LintViolation }
 	local modules = collectModuleLocals(cst)
 	local violations: { types.LintViolation } = {}
@@ -150,9 +175,11 @@ local function lint(cst: syntax.CstStatBlock, sourcepath: path.Path?): { types.L
 					message = `\`{moduleCall.alias}.{moduleCall.name}\` takes a \`Pathlike\`, which is already a string, \`Path\`, or \`PathData\`, so the \`{conversionName}\` can go.`,
 					severity = "warning",
 					sourcepath = sourcepath,
-					suggestedfix = {
-						fix = printer.printNode(conversionCall.arguments[1]),
-					},
+					suggestedfix = if canRemoveWrapper(call, position, conversionCall)
+						then {
+							fix = printer.printNode(conversionCall.arguments[1]),
+						}
+						else nil,
 				}
 				table.insert(violations, violation)
 			end
