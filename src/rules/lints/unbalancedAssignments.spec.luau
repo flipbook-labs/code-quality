@@ -1,0 +1,48 @@
+local test = require("@std/test")
+
+local lintSource = require("../../lib/lintSource")
+local rule = require("./unbalancedAssignments")
+
+test.suite("unbalanced_assignments", function(suite)
+	suite:case("flags too few values", function(assert)
+		assert.eq(#lintSource(rule, "a, b, c = 1"), 1)
+		assert.eq(#lintSource(rule, "a, b, c = 1, 2"), 1)
+		assert.eq(#lintSource(rule, "local a, b = 1"), 1)
+	end)
+
+	suite:case("flags too many values", function(assert)
+		local violations = lintSource(rule, "local a, b, c = 1, 2, 3, 4")
+		assert.eq(#violations, 1)
+		assert.strContains(violations[1].message, "more values")
+		assert.eq(#lintSource(rule, "x = 1, 2"), 1)
+	end)
+
+	suite:case("reports extra values from the first one past the names", function(assert)
+		local violations = lintSource(rule, "x = 1, 2, 3")
+		assert.eq(violations[1].location.beginColumn, 8)
+		assert.eq(violations[1].location.endColumn, 12)
+	end)
+
+	suite:case("mentions a call that isn't last", function(assert)
+		local violations = lintSource(rule, "a, b, c = call(), 2")
+		assert.eq(#violations, 1)
+		assert.strContains(violations[1].message, "first return value")
+	end)
+
+	suite:case("leaves a trailing call, varargs, or nil alone", function(assert)
+		assert.eq(#lintSource(rule, "a, b, c = call()"), 0)
+		assert.eq(#lintSource(rule, "a, b, c = 1, call()"), 0)
+		assert.eq(#lintSource(rule, "local a, b, c = ..."), 0)
+		assert.eq(#lintSource(rule, "a, b, c = nil"), 0)
+	end)
+
+	suite:case("treats a parenthesized call like a call, as Selene does", function(assert)
+		assert.eq(#lintSource(rule, "a, b = (call())"), 0)
+	end)
+
+	suite:case("leaves balanced assignments and bare declarations alone", function(assert)
+		assert.eq(#lintSource(rule, "a, b, c = 1, 2, 3"), 0)
+		assert.eq(#lintSource(rule, "a, b, c = call(), 2, 3"), 0)
+		assert.eq(#lintSource(rule, "local a, b, c"), 0)
+	end)
+end)

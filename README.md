@@ -8,8 +8,36 @@ The house Luau style is written down as prose in [agent-skills](https://github.c
 
 The rules come in two folders:
 
-- `src/rules/lints` catches likely bugs, as a replacement for [Selene](https://github.com/Kampfkarren/selene). It has no rules yet.
-- `src/rules/style` enforces the house style. It holds these rules:
+- `src/rules/lints` catches likely bugs, as a replacement for [Selene](https://github.com/Kampfkarren/selene). Each rule is named after the Selene lint it ports and matches its behavior.
+- `src/rules/style` enforces the house style.
+
+### Lints
+
+| Rule | What it flags |
+| --- | --- |
+| `bad_string_escape` | An escape that doesn't exist, like `"\q"`, or a quote escaped where it doesn't need to be |
+| `compare_nan` | `x == 0/0`, which is always false; use `x ~= x` |
+| `empty_loop` | A loop with an empty body |
+| `mixed_table` | A table constructor with both positional and keyed entries |
+| `multiple_statements` | More than one statement on a line |
+| `suspicious_reverse_loop` | `for i = #t, 1 do`, which needs a step of `-1` to count down |
+| `unbalanced_assignments` | An assignment with more values than names, or fewer values without a trailing call |
+
+`empty_loop` takes a `comments_count` option. When it's `true`, a loop whose body is only a comment isn't flagged. `multiple_statements` takes a `one_line_if` option: `"break-return-only"` (the default) allows `if x then return end` on one line, `"allow"` allows any one-line `if` with a single statement, and `"deny"` allows none. Set options in `.config.luau`:
+
+```luau
+return {
+	lute = {
+		lint = {
+			ruleconfigs = {
+				empty_loop = { options = { comments_count = true } },
+			},
+		},
+	},
+}
+```
+
+### Style
 
 | Rule                        | What it asks for                                                                                       |
 | --------------------------- | ------------------------------------------------------------------------------------------------------ |
