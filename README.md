@@ -8,8 +8,21 @@ The house Luau style is written down as prose in [agent-skills](https://github.c
 
 The rules come in two folders:
 
-- `src/rules/lints` catches likely bugs, as a replacement for [Selene](https://github.com/Kampfkarren/selene). It has no rules yet.
-- `src/rules/style` enforces the house style. It holds these rules:
+- `src/rules/lints` catches likely bugs, as a replacement for [Selene](https://github.com/Kampfkarren/selene). Each rule is named after the Selene lint it ports and matches its behavior.
+- `src/rules/style` enforces the house style.
+
+### Lints
+
+| Rule | What it flags |
+| --- | --- |
+| `global_usage` | Any use of `_G` that isn't a local |
+| `restricted_module_paths` | A module path listed in the `restricted_paths` option |
+| `shadowing` | A local that redeclares a name already in scope |
+| `unscoped_variables` | An assignment to a name no local declares, which makes a global |
+
+`shadowing` and `unscoped_variables` take an `ignore_pattern` option, which defaults to `"^_"`. `global_usage` also takes `ignore_pattern`, but it has no default, so every use of `_G` is flagged until a pattern is set; a pattern such as `"^_.*_$"` allows a field like `_G._foo_`. `restricted_module_paths` takes `restricted_paths`, a map from a dotted path such as `"OldLibrary.Utils.deprecatedFunction"` to the message to show for it, and flags nothing until that map is set. These patterns are Lua patterns, not the regular expressions Selene uses, so only the simple forms carry over unchanged.
+
+### Style
 
 | Rule                        | What it asks for                                                                                       |
 | --------------------------- | ------------------------------------------------------------------------------------------------------ |
