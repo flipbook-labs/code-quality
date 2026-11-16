@@ -4,7 +4,7 @@ collapsed = ["Internal"]
 [version]
 current = "0.2.0"
 mirror = [
-  { file = "pkg.luau", pattern = 'version%s*=%s*"([^"]+)"' },
+  { file = "pkg.luau" },
 ]
 
 [kind]
