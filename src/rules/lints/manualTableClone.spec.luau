@@ -45,6 +45,39 @@ test.suite("manual_table_clone", function(suite)
 		assert.eq(#lintSource(rule, source), 0)
 	end)
 
+	suite:case("leaves a loop over a local that a call set, which might be an iterator", function(assert)
+		local source = table.concat({
+			"local iter = string.gmatch(text, '(%w+)=(%w+)')",
+			"local new = {}",
+			"for key, value in iter do",
+			"\tnew[key] = value",
+			"end",
+			"local key, rest = next(stuff)",
+			"local other = {}",
+			"for k, v in rest do",
+			"\tother[k] = v",
+			"end",
+			"local later = {}",
+			"later = makeIterator()",
+			"local copy = {}",
+			"for k, v in later do",
+			"\tcopy[k] = v",
+			"end",
+		}, "\n")
+		assert.eq(#lintSource(rule, source), 0)
+	end)
+
+	suite:case("still flags pairs over a local that a call set", function(assert)
+		local source =
+			"local stuff = getStuff()\nlocal new = {}\nfor key, value in pairs(stuff) do\n\tnew[key] = value\nend"
+		assert.eq(#lintSource(rule, source), 1)
+	end)
+
+	suite:case("still flags a bare local that wasn't set from a call", function(assert)
+		local source = "local stuff = { a = 1 }\nlocal new = {}\nfor key, value in stuff do\n\tnew[key] = value\nend"
+		assert.eq(#lintSource(rule, source), 1)
+	end)
+
 	suite:case("leaves a loop over a local named like a built-in iterator", function(assert)
 		local source = table.concat({
 			"local function pairs(t) return next, t end",
