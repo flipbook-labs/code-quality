@@ -14,7 +14,9 @@ local NAME = "manual_table_clone"
 -- that statement's list, which is also its position in the values.
 type Declaration = { statement: syntax.CstStatLocal | syntax.CstStatConst, index: number }
 
-type LoopSource = { isIpairs: boolean, expr: syntax.CstExpr }
+-- `isBare` is true for `for k, v in t`, where `t` is iterated directly rather
+-- than through `pairs`, `ipairs`, or `next`.
+type LoopSource = { isIpairs: boolean, isBare: boolean, expr: syntax.CstExpr }
 
 -- A loop shaped like a copy: `for k, v in <source> do target[k] = v end`.
 type CopyLoop = { source: LoopSource, target: syntax.CstExprLocal }
@@ -63,6 +65,7 @@ local function loopSource(values: Items<syntax.CstExpr>): LoopSource?
 		if call == nil then
 			return {
 				isIpairs = false,
+				isBare = true,
 				expr = value,
 			}
 		end
@@ -80,6 +83,7 @@ local function loopSource(values: Items<syntax.CstExpr>): LoopSource?
 		end
 		return {
 			isIpairs = root == "ipairs",
+			isBare = false,
 			expr = argument,
 		}
 	end
@@ -92,6 +96,7 @@ local function loopSource(values: Items<syntax.CstExpr>): LoopSource?
 		end
 		return {
 			isIpairs = false,
+			isBare = false,
 			expr = second,
 		}
 	end
@@ -163,7 +168,44 @@ local function copyTarget(loop: syntax.CstStatForIn): CopyLoop?
 	}
 end
 
+-- Whether the value at `index` in a list of assigned values comes from a call.
+-- A name past the end of the list takes a value from a trailing call or `...`,
+-- as `iter` does in `local key, iter = f()`.
+local function isAssignedFromCall(values: Items<syntax.CstExpr>, index: number): boolean
+	local value = itemAt(values, index)
+	if value ~= nil then
+		return utils.isExprCall(unwrapGroups(value)) ~= nil
+	end
+
+	local last = itemAt(values, #values)
+	return last ~= nil and (utils.isExprCall(last) ~= nil or utils.isExprVarargs(last) ~= nil)
+end
+
+-- Locals that a call ever assigns to, in their declaration or later. A call
+-- might return an iterator, as `string.gmatch` does, so iterating one of these
+-- directly isn't treated as a table copy.
+local function findCallAssignedLocals(cst: syntax.CstStatBlock): { [syntax.CstLocal]: true }
+	local callAssigned: { [syntax.CstLocal]: true } = {}
+	for _, stat in query.findAllFromRoot(cst, utils.isStatLocal).nodes do
+		for index, variable in stat.variables do
+			if isAssignedFromCall(stat.values, index) then
+				callAssigned[variable] = true
+			end
+		end
+	end
+	for _, stat in query.findAllFromRoot(cst, utils.isStatAssign).nodes do
+		for index, variable in stat.variables do
+			local localRef = utils.isExprLocal(variable)
+			if localRef and isAssignedFromCall(stat.values, index) then
+				callAssigned[localRef["local"]] = true
+			end
+		end
+	end
+	return callAssigned
+end
+
 local function lint(cst: syntax.CstStatBlock, sourcepath: path.Path?): { types.LintViolation }
+	local callAssigned = findCallAssignedLocals(cst)
 	local declarations: { [syntax.CstLocal]: Declaration } = {}
 	for _, stat in query.findAllFromRoot(cst, utils.isStatLocal).nodes do
 		for index, variable in stat.variables do
@@ -193,6 +235,11 @@ local function lint(cst: syntax.CstStatBlock, sourcepath: path.Path?): { types.L
 		end
 		local source = copy.source
 		local targetLocal = copy.target
+
+		local sourceLocal = if source.isBare then utils.isExprLocal(unwrapGroups(source.expr)) else nil
+		if sourceLocal and callAssigned[sourceLocal["local"]] then
+			continue
+		end
 
 		local declaration = declarations[targetLocal["local"]]
 		if declaration == nil then
