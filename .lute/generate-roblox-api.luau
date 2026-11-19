@@ -1,4 +1,4 @@
--- Regenerates src/lib/robloxApiData.luau, the Roblox deprecations the
+-- Regenerates src/generated/robloxApiData.luau, the Roblox deprecations the
 -- `deprecated` rule checks. Run it with `lute run generate-roblox-api`.
 --
 -- Roblox's API dump for the current Studio build decides what's deprecated: an
@@ -19,7 +19,7 @@ local process = require("@std/process")
 
 local robloxDocs = require("./lib/robloxDocs")
 
-local OUTPUT_PATH = "src/lib/robloxApiData.luau"
+local OUTPUT_PATH = "src/generated/robloxApiData.luau"
 local SETUP_URL = "https://setup.rbxcdn.com"
 local DOCS_URL = "https://raw.githubusercontent.com/Roblox/creator-docs/main/content/en-us/reference/engine"
 

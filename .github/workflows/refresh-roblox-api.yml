@@ -1,18 +1,21 @@
 name: Refresh Roblox API
 
-# `deprecated` checks Roblox APIs against src/lib/robloxApiData.luau, which is
-# generated from the API dump of the latest Studio build. Roblox ships Studio
-# about once a week, so this regenerates the file every day and opens a PR,
-# or updates the open one, when its deprecations or messages change.
+# The `deprecated` lint checks Roblox APIs against
+# src/generated/robloxApiData.luau, which is generated from the API dump of the
+# latest Studio build. Roblox ships Studio about once a week, so this
+# regenerates the file every day and opens a PR, or updates the open one, when
+# its deprecations or messages change.
 
 on:
   schedule:
+    # Every day at 15:00 UTC. The hour doesn't matter; a new Studio build
+    # waits at most a day to be picked up.
     - cron: "0 15 * * *"
   workflow_dispatch:
 
 env:
   BRANCH: roblox-api-refresh
-  DATA_PATH: src/lib/robloxApiData.luau
+  DATA_PATH: src/generated/robloxApiData.luau
   ENTRY_PATH: .changes/roblox-api-refresh.md
 
 jobs:
