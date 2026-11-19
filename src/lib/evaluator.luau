@@ -3,10 +3,12 @@
 -- `remove_unused_if_branch`, and `remove_unused_while` rules. It ports
 -- darklua's evaluator, so these mods fold the same expressions darklua does.
 --
--- An expression's value is known only when it's built from literals, like
--- `2 * 60` or `"prod" == "dev"`. Anything that reads a name, a field, or a
--- call is unknown. The arithmetic itself runs on Luau's own operators, so a
--- folded result is exactly what the expression would give at runtime.
+-- An expression's value is known when it's built from literals, like
+-- `2 * 60` or `"prod" == "dev"`. Reading a name, a field, or a call gives an
+-- unknown value. An `and` or `or` is still known when its known side decides
+-- the result, as in `false and f()`, since `f` never runs. The arithmetic
+-- itself runs on Luau's own operators, so a folded result is exactly what the
+-- expression would give at runtime.
 
 local luau = require("@std/luau")
 local syntax = require("@std/syntax")

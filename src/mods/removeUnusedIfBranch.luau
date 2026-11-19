@@ -1,10 +1,11 @@
 -- Removes `if` branches that can never run and the conditions that always
--- pass, replacing darklua's `remove_unused_if_branch` rule. A condition counts
--- when it's built from literals and has no side effects, so run
--- `computeExpression` first to fold build checks like
--- `"prod" == "development"` down to `false`.
+-- pass, replacing darklua's `remove_unused_if_branch` rule. The mod
+-- evaluates each condition itself, so a build check like
+-- `"prod" == "development"` counts as always false without running
+-- `computeExpression` first. Run `injectGlobalValue` first, so build globals
+-- in conditions have values.
 --
--- For an `if` statement:
+-- For an `if` statement whose conditions have no side effects:
 --
 -- - A branch whose condition is always false is removed.
 -- - A branch whose condition is always true becomes the `else`, and every
@@ -207,8 +208,9 @@ local function simplifyStatement(
 		return
 	end
 
-	-- The loop above is done changing `firstKept`. A local that isn't
-	-- assigned again lets the type checker narrow it below.
+	-- The type checker doesn't narrow `firstKept` after a nil check, because
+	-- the loop above assigns it. A copy that's never assigned again does
+	-- narrow, which the call to `deleteLeadingBranches` below needs.
 	local leading = firstKept
 	if not leading then
 		-- No branch is left, so the block that runs, if any, takes the

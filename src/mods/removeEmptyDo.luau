@@ -5,8 +5,8 @@
 --
 -- Darklua repeats its pass until nothing changes, which removes nested empty
 -- blocks the same way. When the statement after a removed block opens with
--- `(`, this leaves a `;` in the block's place, so Luau doesn't read that `(`
--- as a call on the line before.
+-- `(` and another statement comes before the block, this leaves a `;` in the
+-- block's place, so Luau doesn't read that `(` as a call on the line before.
 --
 -- Run it with `lute transform <package>/src/mods/removeEmptyDo.luau <files>`.
 

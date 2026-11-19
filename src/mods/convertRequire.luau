@@ -6,8 +6,9 @@
 -- A require is resolved the way Luau resolves it on disk. Relative paths and
 -- `@self` start from the requiring file, and other aliases come from the
 -- nearest `.config.luau` or `.luaurc` above it that defines them. Aliases that
--- point into the home folder, like Lute's `@std`, are skipped, since that code
--- never reaches Roblox. A Rojo sourcemap then says which instance each file
+-- point into the home folder (`~`), like Lute's `@std`, aren't read, since
+-- that code never reaches Roblox, so a require through one stops with an
+-- error. A Rojo sourcemap then says which instance each file
 -- becomes, and the require walks from the requiring file's instance to that
 -- one.
 --
@@ -195,10 +196,12 @@ end
 
 -- Returns the file or folder a require string points at, without extension.
 local function resolveRequirePath(requirer: string, requirePath: string): string
-	-- An init file stands for its folder, so its module path is that folder.
-	-- As in Luau, `./` and `../` start from the folder holding the module path,
-	-- which for an init file is its folder's parent. `@self` starts at the
-	-- module path itself, so an init file reaches its own children with it.
+	-- Luau resolves a require from the requiring module's path: the file's
+	-- path without its extension, or for an init file, its folder, since an
+	-- init file stands for the folder. `./` and `../` start from the folder
+	-- that holds the module path, which for an init file is its folder's
+	-- parent. `@self` starts at the module path itself, so an init file
+	-- reaches its own children with it.
 	local modulePath = if isInit(requirer) then dirname(requirer) else (requirer:gsub("%.[%w%.]+$", ""))
 
 	local alias, rest = requirePath:match("^@([^/]+)/?(.*)$")

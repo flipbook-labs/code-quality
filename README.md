@@ -205,7 +205,7 @@ A Roblox build turns the Luau in `src` into code Roblox can run. Darklua does th
 | `removeNilDeclaration`   | `remove_nil_declaration`    | None                                                                  |
 | `removeEmptyDo`          | `remove_empty_do`           | None                                                                  |
 
-`lute transform` rewrites files in place, so a build copies `src` into its output folder first and runs one `lute transform` per step on the copy. Pass options after `--`. Run the steps in the order above, which is the order darklua configs list them: `injectGlobalValue` puts in the values that `computeExpression` folds, and the folded conditions are what `removeUnusedIfBranch` and `removeUnusedWhile` remove.
+`lute transform` rewrites files in place, so a build copies `src` into its output folder first and runs one `lute transform` per step on the copy. Pass options after `--`. Run the steps in the order above, which is the order darklua configs list them. `injectGlobalValue` puts in the values the later steps evaluate, and `removeUnusedIfBranch` can leave behind the empty blocks and `do return end` that `filterAfterEarlyReturn` and `removeEmptyDo` clean up.
 
 ```sh
 rm -rf dist && cp -R src dist
@@ -222,7 +222,7 @@ lute transform <package>/src/mods/removeEmptyDo.luau dist
 
 `convertRequire` resolves each require the way Luau does on disk, through relative paths, `@self`, and the aliases in the nearest `.config.luau` or `.luaurc`, then looks the file up in the Rojo sourcemap. The sourcemap describes `src`, not the copy, so `--sourceFolder src --buildFolder dist` tells the mod to resolve `dist/Foo.luau` as `src/Foo.luau`. It stops with an error on a require it can't resolve, where darklua logs a warning and leaves the require alone.
 
-`injectGlobalValue` replaces one global per run, so a build with several globals runs it once for each. `--env` names an environment variable whose text becomes a string, and `--value` gives a JSON value such as `true`, `12`, or `"prod"`, used when `--env` isn't set. With neither, the global becomes `nil`.
+`injectGlobalValue` replaces one global per run, so a build with several globals runs it once for each. `--env` names an environment variable whose text becomes a string, and `--value` gives a JSON value such as `true`, `12`, or `"prod"`, used when `--env` isn't given or names a variable that isn't set. With neither, the global becomes `nil`.
 
 A Lute build script can find the mods next to the rule folders the package exports:
 

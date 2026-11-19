@@ -5,8 +5,9 @@
 -- that shape behind when it turns `if true then return end` into a block.
 --
 -- As in darklua, only `do` blocks count. A block always returns when its last
--- statement is a `return`, or when it holds a `do` block that always returns.
--- An `if` that returns from every branch doesn't count.
+-- statement is a `return`. One that ends in some other statement, but not in
+-- `break` or `continue`, also counts when it holds a `do` block that always
+-- returns. An `if` that returns from every branch doesn't count.
 --
 -- Run it with `lute transform <package>/src/mods/filterAfterEarlyReturn.luau <files>`.
 

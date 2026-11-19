@@ -108,6 +108,7 @@ test.suite("convertRequire code mod", function(suite)
 
 	suite:case("treats an init file as its folder", function(assert)
 		assert.eq(convert('local Foo = require("@self/Foo")', "src/init.luau"), "local Foo = require(script.Foo)")
+		assert.eq(convert('local Baz = require("@self/Baz")', "src/Bar/init.luau"), "local Baz = require(script.Baz)")
 		assert.eq(
 			convert('local Baz = require("./Bar/Baz")', "src/Foo.luau"),
 			"local Baz = require(script.Parent.Bar.Baz)"

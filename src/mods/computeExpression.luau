@@ -1,10 +1,10 @@
 -- Replaces expressions whose value is known before the program runs with that
 -- value, replacing darklua's `compute_expression` rule. `2 * 60 * 1000`
--- becomes `120000`, and `"prod" == "development"` becomes `false`, which
--- lets `removeUnusedIfBranch` drop the branch it guards.
+-- becomes `120000`, and `"prod" == "development"` becomes `false`.
 --
--- As in darklua, only unary, binary, and `if` expressions are folded, and only
--- when they have no side effects and every part is a literal. `and` and `or`
+-- As in darklua, only unary, binary, and `if` expressions are folded into a
+-- literal, and only when they have no side effects and their value is known
+-- from the literals in them. `and` and `or`
 -- also fold when their left side is known, keeping the side that decides the
 -- result: `true and value` becomes `value`, and `nil or value` becomes
 -- `value`.

@@ -23,7 +23,8 @@
 -- As in darklua, `_G.NAME`, `_G["NAME"]`, and a bare global `NAME` are all
 -- replaced, unless a local named `_G` or `NAME` hides the global. An
 -- assignment to the global, like `_G.NAME = value`, stays as it is, and so
--- does a method call on `_G`. A value used as a prefix, as in
+-- does `_G:NAME()`, which calls a method on `_G` itself. A value used as a
+-- prefix, as in
 -- `_G.NAME:lower()`, gets parentheses.
 --
 -- Darklua takes the default for a missing variable from a separate

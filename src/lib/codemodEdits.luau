@@ -78,8 +78,10 @@ local function startsWithParen(statement: syntax.CstStat?): boolean
 end
 
 -- Deletes the statement at `index` in `block`. When the statement after it
--- opens with `(`, a `;` is left in its place, so the two statements around it
--- stay apart.
+-- opens with `(` and another statement comes before it, a `;` is left in its
+-- place, so the two statements around it stay apart. The first statement in
+-- a block follows a keyword like `then` or `do`, which Luau doesn't read as
+-- something to call, so it needs no `;`.
 local function deleteStatement(block: syntax.CstStatBlock, index: number, replacements: syntaxTypes.Replacements)
 	local statement = block.statements[index]
 	local nextStatement = block.statements[index + 1]

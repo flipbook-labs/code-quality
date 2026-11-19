@@ -12,6 +12,8 @@ test.suite("computeExpression code mod", function(suite)
 		assert.eq(compute("local timeout = 2 * 60 * 1000"), "local timeout = 120000")
 		assert.eq(compute("local x = 7 // 2 + 7 % 2 + 2 ^ 3"), "local x = 12")
 		assert.eq(compute("local x = 0.1 + 0.2"), "local x = 0.30000000000000004")
+		assert.eq(compute("local x = -1000"), "local x = -1000")
+		assert.eq(compute("local x = 2 * 60000"), "local x = 120000")
 	end)
 
 	suite:case("folds comparisons and logic", function(assert)
