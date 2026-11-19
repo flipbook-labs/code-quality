@@ -18,6 +18,10 @@ The rules come in two folders:
 | `bad_string_escape` | An escape that doesn't exist, like `"\q"`, or a quote escaped where it doesn't need to be |
 | `compare_nan` | `x == 0/0`, which is always false; use `x ~= x` |
 | `empty_loop` | A loop with an empty body |
+| `high_cyclomatic_complexity` | A function with more branches, loops, `and`s, and `or`s than `maximum_complexity` allows |
+| `if_same_then_else` | An `if` branch whose block repeats an earlier branch of the same `if` |
+| `ifs_same_cond` | An `elseif` whose condition repeats an earlier condition of the same `if` |
+| `manual_table_clone` | A loop that copies a fresh table's entries one by one, where `table.clone` does the same |
 | `mixed_table` | A table constructor with both positional and keyed entries |
 | `multiple_statements` | More than one statement on a line |
 | `suspicious_reverse_loop` | `for i = #t, 1 do`, which needs a step of `-1` to count down |
@@ -36,6 +40,8 @@ return {
 	},
 }
 ```
+
+`high_cyclomatic_complexity` takes one option, `maximum_complexity`, which defaults to `40`. Set it under `lute.lint.ruleconfigs.high_cyclomatic_complexity.options`. Selene ships this lint off; here it's on by default, so a project that doesn't want it turns it off in its config.
 
 ### Style
 
