@@ -17,6 +17,7 @@ The rules come in two folders:
 | --- | --- |
 | `bad_string_escape` | An escape that doesn't exist, like `"\q"`, or a quote escaped where it doesn't need to be |
 | `compare_nan` | `x == 0/0`, which is always false; use `x ~= x` |
+| `deprecated` | Standard library functions and fields that are deprecated, such as `table.getn`, and deprecated parameters, such as the second argument to `Instance.new` |
 | `empty_loop` | A loop with an empty body |
 | `high_cyclomatic_complexity` | A function with more branches, loops, `and`s, and `or`s than `maximum_complexity` allows |
 | `if_same_then_else` | An `if` branch whose block repeats an earlier branch of the same `if` |
@@ -24,6 +25,7 @@ The rules come in two folders:
 | `manual_table_clone` | A loop that copies a fresh table's entries one by one, where `table.clone` does the same |
 | `mixed_table` | A table constructor with both positional and keyed entries |
 | `multiple_statements` | More than one statement on a line |
+| `must_use`   | A standard library call whose return value is discarded, as in a `math.max(x, y)` statement |
 | `suspicious_reverse_loop` | `for i = #t, 1 do`, which needs a step of `-1` to count down |
 | `unbalanced_assignments` | An assignment with more values than names, or fewer values without a trailing call |
 
@@ -42,6 +44,8 @@ return {
 ```
 
 `high_cyclomatic_complexity` takes one option, `maximum_complexity`, which defaults to `40`. Set it under `lute.lint.ruleconfigs.high_cyclomatic_complexity.options`. Selene ships this lint off; here it's on by default, so a project that doesn't want it turns it off in its config.
+
+`deprecated` takes an `allow` option, a list of dotted paths to leave alone, such as `table.getn` or `table.*`. A path also allows everything under it.
 
 ### Style
 
