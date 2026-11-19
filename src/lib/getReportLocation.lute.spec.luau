@@ -2,7 +2,10 @@
 -- because some failures only happen in Lute's own handling of a violation
 -- after the rule returns it.
 
+local fs = require("@std/fs")
+local path = require("@std/path")
 local process = require("@std/process")
+local system = require("@std/system")
 local test = require("@std/test")
 
 -- `rulePath` is relative to `src/rules`, as in `style/noAny`.
@@ -37,6 +40,35 @@ test.suite("lute lint", function(suite)
 		assert.strContains(output, "warning[no_error_field]")
 		assert.strNotContains(output, "attempt to index nil")
 	end)
+	suite:case("reports a restricted module path inside a table type", function(assert)
+		-- The rule flags nothing without configuration, so this writes a
+		-- config file that restricts `game.Foo.Bar`.
+		-- Each run gets its own file, so overlapping runs don't delete each other's.
+		local configPath =
+			path.join(system.tmpdir(), `restricted-module-paths-{os.time()}-{math.random(1e9)}.config.luau`)
+		fs.writeStringToFile(
+			configPath,
+			'return { lute = { lint = { ruleconfigs = { restricted_module_paths = { options = { restricted_paths = { ["game.Foo.Bar"] = "Use Baz." } } } } } } }'
+		)
+
+		local result = process.run({
+			"lute",
+			"lint",
+			"--no-default-lints",
+			"--config",
+			path.format(configPath),
+			"--rules",
+			"src/rules/lints/restrictedModulePaths.luau",
+			"--string-input",
+			"type T = { f: typeof(game.Foo.Bar) }",
+		})
+		fs.remove(configPath)
+
+		local output = result.stdout .. result.stderr
+		assert.strContains(output, "warning[restricted_module_paths]")
+		assert.strNotContains(output, "attempt to index nil")
+	end)
+
 	-- A function inside `typeof` puts whole statements inside a table type.
 	local FUNCTION_IN_TABLE_TYPE =
 		"type T = { f: typeof(function() local a, b = 1 while true do end a() b() for i = #x, 1 do end end) }"

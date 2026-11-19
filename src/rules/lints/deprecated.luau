@@ -168,6 +168,12 @@ local function lint(
 	local inChain: { [syntax.CstExpr]: true } = {}
 	calls:forEach(function(call)
 		inChain[call.func] = true
+		-- With type arguments, as in `table.foreach<<T>>(t, f)`, the name sits
+		-- one level down and belongs to the same call.
+		local instantiate = utils.isExprInstantiate(call.func)
+		if instantiate then
+			inChain[instantiate.expr] = true
+		end
 	end)
 	indexes:forEach(function(index)
 		inChain[index.expression] = true

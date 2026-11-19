@@ -38,6 +38,10 @@ test.suite("deprecated", function(suite)
 		assert.eq(#lintSource(rule, 'local instance = Instance.new("Folder", parent)'), 1)
 	end)
 
+	suite:case("reports a call with type arguments once", function(assert)
+		assert.eq(#lintSource(rule, "table.foreach<<number>>(items, visit)"), 1)
+	end)
+
 	suite:case("wraps an argument built from operators in its replacement", function(assert)
 		local violations = lintSource(rule, "local count = table.getn(a or b)")
 		assert.strContains(violations[1].message, "`#(a or b)`")
