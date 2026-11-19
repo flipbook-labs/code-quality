@@ -6,6 +6,7 @@ local utils = require("@std/syntax/utils")
 
 local getGlobalNamePath = require("../../lib/globalNamePath")
 local getReportLocation = require("../../lib/getReportLocation")
+local robloxApi = require("../../lib/robloxApi")
 local standardLibrary = require("../../lib/standardLibrary")
 local types = require("../../types")
 local unwrapGroups = require("../../lib/unwrapGroups")
@@ -96,6 +97,19 @@ local function sourceText(expr: syntax.CstExpr): string
 	return text
 end
 
+-- The path as written, so a method call reads `game:service` rather than the
+-- `game.service` it's looked up by. A name path is a chain of indexes like
+-- `a.b.c`, and only the last index in one can be a colon, since `a:b.c` isn't
+-- valid Luau.
+local function displayPath(expr: syntax.CstExpr, namePath: { string }): string
+	local instantiate = utils.isExprInstantiate(expr)
+	local index = utils.isExprIndexName(if instantiate then instantiate.expr else expr)
+	if index and index.accessor.text == ":" then
+		return `{table.concat(namePath, ".", 1, #namePath - 1)}:{namePath[#namePath]}`
+	end
+	return table.concat(namePath, ".")
+end
+
 local function lint(
 	cst: syntax.CstStatBlock,
 	sourcepath: path.Path?,
@@ -122,6 +136,7 @@ local function lint(
 		location: syntax.Span,
 		kind: string,
 		namePath: { string },
+		display: string,
 		argumentNodes: { syntax.CstExpr }?
 	)
 		if isAllowed(allow, namePath) then
@@ -135,9 +150,15 @@ local function lint(
 		end
 
 		for count = 1, #namePath do
-			local deprecation = standardLibrary.getDeprecation(table.concat(namePath, ".", 1, count))
+			local prefix = table.concat(namePath, ".", 1, count)
+			local library = "Standard library"
+			local deprecation = standardLibrary.getDeprecation(prefix)
+			if deprecation == nil then
+				library = "Roblox"
+				deprecation = robloxApi.getDeprecation(prefix)
+			end
 			if deprecation then
-				local message = `Standard library {kind} \`{joined}\` is deprecated: {deprecation.message}`
+				local message = `{library} {kind} \`{display}\` is deprecated: {deprecation.message}`
 				local replacement = if deprecation.replace
 					then renderReplacement(deprecation.replace, argumentTexts)
 					else nil
@@ -194,7 +215,7 @@ local function lint(
 			for _, argument in call.arguments do
 				table.insert(arguments, argument)
 			end
-			checkNamePath(call.location, "function", namePath, arguments)
+			checkNamePath(call.location, "function", namePath, displayPath(call.func, namePath), arguments)
 		end
 	end)
 	indexes:forEach(function(index)
@@ -203,14 +224,14 @@ local function lint(
 		end
 		local namePath = getGlobalNamePath(index)
 		if namePath then
-			checkNamePath(index.location, "expression", namePath, nil)
+			checkNamePath(index.location, "expression", namePath, displayPath(index, namePath), nil)
 		end
 	end)
 	globals:forEach(function(global)
 		if inChain[global] then
 			return
 		end
-		checkNamePath(global.location, "expression", { global.name.text }, nil)
+		checkNamePath(global.location, "expression", { global.name.text }, global.name.text, nil)
 	end)
 
 	return violations

@@ -1,0 +1,3 @@
+# Written by scripts rather than by hand, so GitHub collapses their diffs in
+# pull requests and leaves them out of language stats.
+src/generated/** linguist-generated=true

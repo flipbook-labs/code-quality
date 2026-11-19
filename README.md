@@ -17,7 +17,7 @@ The rules come in two folders:
 | --- | --- |
 | `bad_string_escape` | An escape that doesn't exist, like `"\q"`, or a quote escaped where it doesn't need to be |
 | `compare_nan` | `x == 0/0`, which is always false; use `x ~= x` |
-| `deprecated` | Standard library functions and fields that are deprecated, such as `table.getn`, and deprecated parameters, such as the second argument to `Instance.new` |
+| `deprecated` | Deprecated standard library functions and fields, such as `table.getn`; deprecated Roblox APIs on `game`, `plugin`, `script`, `workspace`, and `Enum`, such as `workspace:FindPartOnRay` and `Enum.Axis.Left`; and deprecated parameters, such as the second argument to `Instance.new` |
 | `empty_loop` | A loop with an empty body |
 | `global_usage` | Any use of `_G` that isn't a local |
 | `high_cyclomatic_complexity` | A function with more branches, loops, `and`s, and `or`s than `maximum_complexity` allows |
@@ -52,7 +52,9 @@ return {
 
 `high_cyclomatic_complexity` takes one option, `maximum_complexity`, which defaults to `40`. Set it under `lute.lint.ruleconfigs.high_cyclomatic_complexity.options`.
 
-`deprecated` takes an `allow` option, a list of dotted paths to leave alone, such as `table.getn` or `table.*`. A path also allows everything under it.
+`deprecated` takes an `allow` option, a list of dotted paths to leave alone, such as `table.getn` or `table.*`. A path also allows everything under it. Write a method call with a dot, as in `workspace.FindPartOnRay`.
+
+The Roblox APIs `deprecated` knows about are generated from Roblox's API dump into `src/generated/robloxApiData.luau`, with messages from Roblox's creator-docs reference. A daily workflow reruns `lute run generate-roblox-api` and opens a PR when a new Studio build changes them. Run the script by hand to refresh them sooner.
 
 `shadowing` and `unscoped_variables` take an `ignore_pattern` option, which defaults to `"^_"`. `global_usage` also takes `ignore_pattern`, but it has no default, so every use of `_G` is flagged until a pattern is set; a pattern such as `"^_.*_$"` allows a field like `_G._foo_`. `restricted_module_paths` takes `restricted_paths`, a map from a dotted path such as `"OldLibrary.Utils.deprecatedFunction"` to the message to show for it, and flags nothing until that map is set. These patterns are Lua patterns, not regular expressions.
 
@@ -73,7 +75,8 @@ These apply to one rule or a group of them:
 | Rule | Difference |
 | --- | --- |
 | `bad_string_escape` | A malformed or out-of-range escape, like `"\x1"` or `"\u{110000}"`, is a Luau parse error, so the file fails to lint instead of getting this warning. |
-| `deprecated`, `must_use` | The function lists are hand copies of Selene 0.31.0's `lua51`, `luau`, and `roblox_base` definitions, so they change only when someone updates them. Only globals read through `.` or `:`, like `table.getn`, are checked. Instance methods such as `signal:connect` need the receiver's type and aren't checked, and Roblox API deprecations outside `roblox_base` aren't listed. |
+| `deprecated`, `must_use` | The standard library lists are hand copies of Selene 0.31.0's `lua51`, `luau`, and `roblox_base` definitions, so they change only when someone updates them. Only globals read through `.` or `:`, like `table.getn`, are checked. Instance methods such as `signal:connect` need the receiver's type and aren't checked. |
+| `deprecated` | Roblox APIs follow the API dump as of the last `lute run generate-roblox-api`, not the dump Selene's std was generated from. Messages come from Roblox's creator-docs reference rather than Selene's generic "this property is deprecated." Selene flags only an enum item's legacy names, like `Enum.Axis.Left`. This rule also flags items Roblox tags as deprecated, like `Enum.SortOrder.Custom`, and flags a deprecated enum, like `Enum.Status`, once rather than once per item. |
 | `must_use` | A call on a local, like `math.max(x, y)` after `local math = {}`, isn't flagged. Selene flags it. |
 | `empty_loop` | `comments_count` counts only a comment inside the loop's body. Selene counts one anywhere in the loop, so `while --[[ready?]] ready do end` passed there. |
 | `global_usage` | Only `_G` is flagged. Selene also flags `shared` under its Roblox std. |

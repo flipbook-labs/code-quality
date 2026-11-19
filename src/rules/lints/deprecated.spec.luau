@@ -78,6 +78,72 @@ test.suite("deprecated", function(suite)
 		assert.eq(#lintSource(rule, "table.getn = nil"), 0)
 	end)
 
+	suite:case("flags a deprecated method called on a Roblox global", function(assert)
+		local violations = lintSource(rule, "local result = workspace:FindPartOnRay(ray)")
+		assert.eq(#violations, 1)
+		assert.strContains(violations[1].message, "Roblox function `workspace:FindPartOnRay` is deprecated")
+		assert.strContains(violations[1].message, "WorldRoot:Raycast()")
+	end)
+
+	suite:case("flags a deprecated member a Roblox global inherits", function(assert)
+		assert.eq(#lintSource(rule, "local copy = script:clone()"), 1)
+		assert.eq(#lintSource(rule, "local lighting = game:service(name)"), 1)
+		assert.eq(#lintSource(rule, "local userId = plugin:GetStudioUserId()"), 1)
+	end)
+
+	suite:case("flags a deprecated property read from a Roblox global", function(assert)
+		local violations = lintSource(rule, "local world = game.workspace")
+		assert.eq(#violations, 1)
+		assert.strContains(violations[1].message, "Roblox expression `game.workspace`")
+	end)
+
+	suite:case("leaves current members of Roblox globals alone", function(assert)
+		assert.eq(#lintSource(rule, "local result = workspace:Raycast(origin, direction)"), 0)
+		assert.eq(#lintSource(rule, 'local players = game:GetService("Players")'), 0)
+		assert.eq(#lintSource(rule, "local world = game.Workspace"), 0)
+	end)
+
+	suite:case("leaves deprecated names on other values alone", function(assert)
+		assert.eq(#lintSource(rule, "local copy = part:clone()"), 0)
+		assert.eq(#lintSource(rule, "local result = workspace.Terrain:clone()"), 0)
+	end)
+
+	suite:case("leaves a local named after a Roblox global alone", function(assert)
+		local source = table.concat({
+			"local workspace = {}",
+			"local result = workspace:FindPartOnRay(ray)",
+		}, "\n")
+		assert.eq(#lintSource(rule, source), 0)
+	end)
+
+	suite:case("flags an enum item's legacy name and suggests the current one", function(assert)
+		local violations = lintSource(rule, "local axis = Enum.Axis.Left")
+		assert.eq(#violations, 1)
+		assert.strContains(violations[1].message, "Try `Enum.Axis.X`.")
+	end)
+
+	suite:case("flags a deprecated enum item", function(assert)
+		assert.eq(#lintSource(rule, "local order = Enum.SortOrder.Custom"), 1)
+	end)
+
+	suite:case("flags a deprecated enum once, including its items", function(assert)
+		assert.eq(#lintSource(rule, "local status = Enum.Status"), 1)
+		assert.eq(#lintSource(rule, "local status = Enum.Status.Poison"), 1)
+	end)
+
+	suite:case("leaves current enum items alone", function(assert)
+		assert.eq(#lintSource(rule, "local order = Enum.SortOrder.LayoutOrder"), 0)
+		assert.eq(#lintSource(rule, "local axis = Enum.Axis.X"), 0)
+	end)
+
+	suite:case("allows a Roblox path named in the allow option", function(assert)
+		local source = table.concat({
+			"local result = workspace:FindPartOnRay(ray)",
+			"local axis = Enum.Axis.Left",
+		}, "\n")
+		assert.eq(#lintSource(rule, source, { allow = { "workspace", "Enum.Axis.*" } }), 0)
+	end)
+
 	suite:case("allows a path named in the allow option", function(assert)
 		assert.eq(#lintSource(rule, "table.getn(list)", { allow = { "table.getn" } }), 0)
 	end)
