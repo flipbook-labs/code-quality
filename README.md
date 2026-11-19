@@ -131,14 +131,26 @@ Explicit instantiation needs StyLua's `syntax = "Luau"` setting. Without it, Sty
 
 ## Using the rules
 
-Point `lute lint` at a rule folder of the installed package. The package exports each folder's absolute path, so a Lute script doesn't need to know where Loom installed it:
+Point `lute lint` at a rule folder of the installed package. Declare the package as a dev dependency in `pkg.luau`, under the `code-quality` key:
+
+```luau
+dev_dependencies = {
+	["code-quality"] = {
+		rev = "v0.3.0",
+		sourceKind = "github",
+		source = "https://github.com/flipbook-labs/code-quality",
+	},
+},
+```
+
+`lute run install` adds a `code-quality` alias to `.config.luau` that points at the installed package. The package exports each rule folder's absolute path, so a Lute script requires it by that alias and doesn't need to know where Loom installed it:
 
 - `LINT_RULES_PATH` is `src/rules/lints`, the Selene replacement.
 - `STYLE_RULES_PATH` is `src/rules/style`, the house style.
 - `RULES_PATH` is `src/rules`, which runs both.
 
 ```luau
-local CodeQuality = require("@luaupkg/CodeQuality@v0.3.0")
+local CodeQuality = require("@code-quality")
 local process = require("@std/process")
 
 -- Only the Selene replacement. Use RULES_PATH to run the house style too.
@@ -159,7 +171,7 @@ A code mod rewrites source in place, for a one-time migration or a fix too large
 
 ## Running a code mod
 
-Pass `lute transform` the mod and the files or folders to rewrite. `<package>` is the installed package's folder, two levels above `RULES_PATH`. Preview the changes with `--dry-run` first:
+Pass `lute transform` the mod and the files or folders to rewrite. `<package>` is the installed package's folder, the one the `code-quality` alias points to in `.config.luau`. Preview the changes with `--dry-run` first:
 
 ```sh
 lute transform <package>/src/mods/stringMethodCall.luau --dry-run src
