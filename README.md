@@ -54,7 +54,7 @@ return {
 
 `deprecated` takes an `allow` option, a list of dotted paths to leave alone, such as `table.getn` or `table.*`. A path also allows everything under it. Write a method call with a dot, as in `workspace.FindPartOnRay`.
 
-The Roblox APIs `deprecated` knows about are generated from Roblox's API dump into `src/lib/robloxApiData.luau`, with messages from Roblox's creator-docs reference. Run `lute run generate-roblox-api` to refresh them for the latest Studio build.
+The Roblox APIs `deprecated` knows about are generated from Roblox's API dump into `src/lib/robloxApiData.luau`, with messages from Roblox's creator-docs reference. A daily workflow reruns `lute run generate-roblox-api` and opens a PR when a new Studio build changes them. Run the script by hand to refresh them sooner.
 
 `shadowing` and `unscoped_variables` take an `ignore_pattern` option, which defaults to `"^_"`. `global_usage` also takes `ignore_pattern`, but it has no default, so every use of `_G` is flagged until a pattern is set; a pattern such as `"^_.*_$"` allows a field like `_G._foo_`. `restricted_module_paths` takes `restricted_paths`, a map from a dotted path such as `"OldLibrary.Utils.deprecatedFunction"` to the message to show for it, and flags nothing until that map is set. These patterns are Lua patterns, not regular expressions.
 
