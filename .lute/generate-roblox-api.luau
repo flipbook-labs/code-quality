@@ -17,6 +17,8 @@ local json = require("@std/json")
 local net = require("@std/net")
 local process = require("@std/process")
 
+local robloxDocs = require("./lib/robloxDocs")
+
 local OUTPUT_PATH = "src/lib/robloxApiData.luau"
 local SETUP_URL = "https://setup.rbxcdn.com"
 local DOCS_URL = "https://raw.githubusercontent.com/Roblox/creator-docs/main/content/en-us/reference/engine"
@@ -67,20 +69,6 @@ type Entry = {
 	replace: string?,
 }
 
--- Messages from one creator-docs page. `page` is the message for the class or
--- enum itself, and `items` maps a member or item name to its message.
-type DocsMessages = {
-	page: string?,
-	items: { [string]: string },
-}
-
-local function emptyDocs(): DocsMessages
-	return {
-		page = nil,
-		items = {},
-	}
-end
-
 local function fetch(url: string): string?
 	local response = net.request(url)
 	if response.status == 404 then
@@ -100,112 +88,16 @@ local function isIdentifier(name: string): boolean
 	return name:match("^[%a_][%w_]*$") ~= nil
 end
 
--- Turns creator-docs markup into plain text. A reference such as
--- `Class.Instance:Clone()` drops its `Class.` prefix, and the same goes for
--- `Datatype.`, `Library.`, and `Global.<group>.`. A reference written as
--- `Class.ServiceProvider:GetService()|GetService()` keeps only the text after
--- the bar, and a Markdown link keeps only its text.
-local function cleanMarkup(text: string): string
-	text = text:gsub("`([^`]+)`", function(reference: string): string
-		local display = reference:match("|(.+)$")
-		if display then
-			return `\`{display}\``
-		end
-		local stripped = reference:gsub("^Class%.", ""):gsub("^Datatype%.", ""):gsub("^Library%.", "")
-		stripped = stripped:gsub("^Global%.%w+%.", "")
-		return `\`{stripped}\``
-	end)
-	text = text:gsub("%[([^%]]+)%]%([^%)]+%)", "%1")
-	return text
-end
+local docsCache: { [string]: robloxDocs.DocsMessages } = {}
 
--- Joins a YAML block scalar's lines into one line, keeping only the first
--- paragraph. Later paragraphs give background that doesn't fit in a lint
--- message.
-local function firstParagraph(lines: { string }): string?
-	local words: { string } = {}
-	for _, line in lines do
-		local trimmed = line:match("^%s*(.-)%s*$") or ""
-		if trimmed == "" then
-			if #words > 0 then
-				break
-			end
-		else
-			table.insert(words, trimmed)
-		end
-	end
-	if #words == 0 then
-		return nil
-	end
-	return cleanMarkup(table.concat(words, " "))
-end
-
--- Reads every `deprecation_message` from a creator-docs page. The pages are
--- generated YAML in a fixed layout, so a line scanner is enough: entries start
--- with `  - name: ...`, and a message is either an inline scalar or a block
--- whose lines are indented further than its key.
-local function parseDocs(source: string): DocsMessages
-	local lines = source:split("\n")
-	local messages = emptyDocs()
-	local currentName: string? = nil
-	local index = 1
-	while index <= #lines do
-		local line = lines[index]
-		local name = line:match("^  %- name: (.+)$")
-		if name then
-			currentName = name:match("^['\"]?(.-)['\"]?$")
-		end
-
-		local indent, value = line:match("^(%s*)deprecation_message:%s*(.*)$")
-		if indent and value then
-			local message: string? = nil
-			if value == "|" or value == "|-" or value == ">" or value == ">-" then
-				local block: { string } = {}
-				index += 1
-				while index <= #lines do
-					local blockLine = lines[index]
-					local blockIndent = blockLine:match("^(%s*)%S")
-					if blockIndent and #blockIndent <= #indent then
-						index -= 1
-						break
-					end
-					table.insert(block, blockLine)
-					index += 1
-				end
-				message = firstParagraph(block)
-			else
-				local unquoted = value:match("^'(.*)'$") or value:match('^"(.*)"$') or value
-				if unquoted ~= "" then
-					message = cleanMarkup(unquoted)
-				end
-			end
-
-			if message then
-				if #indent == 0 then
-					messages.page = message
-				elseif currentName then
-					-- Member names are written as `Class.Member` or
-					-- `Class:Member`, and enum items as the bare name.
-					local member = currentName:match("[%.:]([^%.:]+)$") or currentName
-					messages.items[member] = message
-				end
-			end
-		end
-		index += 1
-	end
-	return messages
-end
-
-local docsCache: { [string]: DocsMessages } = {}
-
-local function getDocs(kind: "classes" | "enums", name: string): DocsMessages
+local function getDocs(kind: "classes" | "enums", name: string): robloxDocs.DocsMessages
 	local key = `{kind}/{name}`
 	local cached = docsCache[key]
 	if cached then
 		return cached
 	end
 	local source = fetch(`{DOCS_URL}/{kind}/{name}.yaml`)
-	local messages = if source then parseDocs(source) else emptyDocs()
+	local messages = if source then robloxDocs.parse(source) else robloxDocs.empty()
 	docsCache[key] = messages
 	return messages
 end
@@ -279,7 +171,7 @@ for _, enum in dump.Enums do
 			hasDeprecations = true
 		end
 	end
-	local docs = if hasDeprecations then getDocs("enums", enum.Name) else emptyDocs()
+	local docs = if hasDeprecations then getDocs("enums", enum.Name) else robloxDocs.empty()
 
 	-- A deprecated enum's items aren't listed on their own, so a use such as
 	-- `Enum.Status.Poison` gets one warning, for the enum, rather than two.
