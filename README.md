@@ -163,9 +163,19 @@ process.run({ "lute", "lint", "--sequential", "--rules", CodeQuality.LINT_RULES_
 
 A code mod rewrites source in place, for a one-time migration or a fix too large for a lint autofix. Mods live in `src/mods` and run under `lute transform`.
 
-| Mod                | What it does                                            |
-| ------------------ | ------------------------------------------------------- |
-| `stringMethodCall` | Rewrites `string.find(value, ...)` as `value:find(...)` |
+| Mod                      | What it does                                                                |
+| ------------------------ | --------------------------------------------------------------------------- |
+| `stringMethodCall`       | Rewrites `string.find(value, ...)` as `value:find(...)`                     |
+| `convertRequire`         | Rewrites `require("@pkg/React")` as `require(script.Parent.Packages.React)` |
+| `injectGlobalValue`      | Replaces a build global like `_G.BUILD_CHANNEL` with its value              |
+| `computeExpression`      | Folds expressions built from literals, like `2 * 60` or `"prod" == "dev"`   |
+| `removeUnusedIfBranch`   | Removes `if` branches that never run and conditions that always pass        |
+| `removeUnusedWhile`      | Removes `while` loops whose condition is always false                       |
+| `filterAfterEarlyReturn` | Removes statements after a `do return end`                                  |
+| `removeNilDeclaration`   | Turns `local name = nil` into `local name`                                  |
+| `removeEmptyDo`          | Removes empty `do ... end` blocks                                           |
+
+All but `stringMethodCall` replace a step of a [darklua](https://github.com/seaofvoices/darklua) build. [Building without darklua](#building-without-darklua) covers them.
 
 `stringMethodCall` fixes what `string_method_call` flags. It leaves a few calls alone because rewriting them could change what the code does: a first argument that can't be a string, like `-5` or `a + b`, a call or `...` passed as the only argument, which may hand over several values, a call with a comment beside its first argument or inside `string.<method>`, and a rewrite that would start a statement with `(`, which Luau could read as a call on the line before. The rule still flags those, so lint afterwards to find any that need a hand edit.
 
@@ -179,6 +189,67 @@ lute transform <package>/src/mods/stringMethodCall.luau src
 ```
 
 A mod keeps the rest of each file as written but doesn't reformat the code it changes. Run your formatter afterwards, then the repo's own checks, before you commit.
+
+## Building without darklua
+
+A Roblox build turns the Luau in `src` into code Roblox can run. Darklua does that with a list of rules in `.darklua.json`. Each of these mods replaces one of those rules, so a repo runs only the steps it needs:
+
+| Mod                      | Darklua rule                | Options                                                               |
+| ------------------------ | --------------------------- | --------------------------------------------------------------------- |
+| `convertRequire`         | `convert_require`           | `sourcemap` (default `sourcemap.json`), `sourceFolder`, `buildFolder` |
+| `injectGlobalValue`      | `inject_global_value`       | `identifier` (required), `env`, `value`                               |
+| `computeExpression`      | `compute_expression`        | None                                                                  |
+| `removeUnusedIfBranch`   | `remove_unused_if_branch`   | None                                                                  |
+| `removeUnusedWhile`      | `remove_unused_while`       | None                                                                  |
+| `filterAfterEarlyReturn` | `filter_after_early_return` | None                                                                  |
+| `removeNilDeclaration`   | `remove_nil_declaration`    | None                                                                  |
+| `removeEmptyDo`          | `remove_empty_do`           | None                                                                  |
+
+`lute transform` rewrites files in place, so a build copies `src` into its output folder first and runs one `lute transform` per step on the copy. Pass options after `--`. Run the steps in the order above, which is the order darklua configs list them: `injectGlobalValue` puts in the values that `computeExpression` folds, and the folded conditions are what `removeUnusedIfBranch` and `removeUnusedWhile` remove.
+
+```sh
+rm -rf dist && cp -R src dist
+rojo sourcemap build.project.json -o sourcemap.json
+lute transform <package>/src/mods/convertRequire.luau dist -- --sourcemap sourcemap.json --sourceFolder src --buildFolder dist
+lute transform <package>/src/mods/injectGlobalValue.luau dist -- --identifier BUILD_CHANNEL --env BUILD_CHANNEL
+lute transform <package>/src/mods/computeExpression.luau dist
+lute transform <package>/src/mods/removeUnusedIfBranch.luau dist
+lute transform <package>/src/mods/removeUnusedWhile.luau dist
+lute transform <package>/src/mods/filterAfterEarlyReturn.luau dist
+lute transform <package>/src/mods/removeNilDeclaration.luau dist
+lute transform <package>/src/mods/removeEmptyDo.luau dist
+```
+
+`convertRequire` resolves each require the way Luau does on disk, through relative paths, `@self`, and the aliases in the nearest `.config.luau` or `.luaurc`, then looks the file up in the Rojo sourcemap. The sourcemap describes `src`, not the copy, so `--sourceFolder src --buildFolder dist` tells the mod to resolve `dist/Foo.luau` as `src/Foo.luau`. It stops with an error on a require it can't resolve, where darklua logs a warning and leaves the require alone.
+
+`injectGlobalValue` replaces one global per run, so a build with several globals runs it once for each. `--env` names an environment variable whose text becomes a string, and `--value` gives a JSON value such as `true`, `12`, or `"prod"`, used when `--env` isn't set. With neither, the global becomes `nil`.
+
+A Lute build script can find the mods next to the rule folders the package exports:
+
+```luau
+local CodeQuality = require("@code-quality")
+local path = require("@std/path")
+local process = require("@std/process")
+
+local MODS_PATH = path.join(CodeQuality.RULES_PATH, "..", "mods")
+
+local function transform(mod: string, options: { string })
+	local command = { "lute", "transform", path.format(path.join(MODS_PATH, `{mod}.luau`)), "dist", "--" }
+	table.move(options, 1, #options, #command + 1, command)
+	local result = process.run(command, { stdio = "inherit" })
+	assert(result.ok, `{mod} failed`)
+end
+
+transform("convertRequire", { "--sourcemap", "sourcemap.json", "--sourceFolder", "src", "--buildFolder", "dist" })
+transform("computeExpression", {})
+```
+
+The output means the same as darklua's, but it isn't the same text. Darklua reprints every file, and these mods keep each file as written apart from what they change. A few choices also differ, and each mod's doc comment lists them:
+
+- Folded numbers are written the way `tostring` writes them, so darklua's `12E4` is `120000` here.
+- `removeUnusedIfBranch` moves the block of an `if` that always runs into the enclosing block, where darklua always wraps it in `do ... end`. It still wraps a block that declares locals or types, or ends in `return`, `break`, or `continue`.
+- When a removed statement or a moved block would leave a statement that opens with `(` right after another one, the mods keep them apart with `;` or `do ... end`. Luau would otherwise read the `(` as a call on the line before.
+- A plain copy keeps every file in `src`. Darklua writes only Luau files and turns JSON, TOML, and YAML files into Luau modules, so prune anything the build shouldn't ship.
 
 ## Development
 
@@ -208,4 +279,4 @@ Each rule lives in `src/rules/lints` or `src/rules/style` with a spec beside it 
 3. If the rule reports inside a table type, report at `getReportLocation`'s location instead, and add a case to `src/lib/getReportLocation.lute.spec.luau`. Its comment explains why.
 4. Add a row to its folder's table above, and a change entry in `.changes/`.
 
-A code mod follows the same pattern in `src/mods`. It returns a frozen table with a `transform` function, which takes the file's parse result and returns replacements for the nodes it rewrites. Its spec runs snippets through `src/lib/transformSource.luau` and compares the rewritten source. When a mod fixes what a rule flags, share the matching code through `src/lib`, as `stringMethodCall` does with `getStringMethodName`.
+A code mod follows the same pattern in `src/mods`. It returns a frozen table with a `transform` function, which takes the file's parse result and returns replacements for the nodes it rewrites. Its spec runs snippets through `src/lib/transformSource.luau` and compares the rewritten source. A mod can also declare `options`, which `lute transform` reads from the arguments after `--`, and an `initialize` function that runs once before the first file. `transformSource` takes the options and the file's path as extra arguments and runs `initialize` the same way. When a mod fixes what a rule flags, share the matching code through `src/lib`, as `stringMethodCall` does with `getStringMethodName`.
