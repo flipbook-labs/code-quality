@@ -1,0 +1,57 @@
+local test = require("@std/test")
+
+local lintSource = require("../../lib/lintSource")
+local rule = require("./robloxManualFromscaleOrFromoffset")
+
+test.suite("roblox_manual_fromscale_or_fromoffset", function(suite)
+	suite:case("flags a call that only sets scale", function(assert)
+		local violations = lintSource(rule, "UDim2.new(1, 0, 1, 0)")
+		assert.eq(#violations, 1)
+		assert.strContains(violations[1].message, "UDim2.fromScale(1, 1)")
+		assert.eq(#lintSource(rule, "UDim2.new(0, 0, 1, 0)"), 1)
+		assert.eq(#lintSource(rule, "UDim2.new(a, 0, 0, 0)"), 1)
+	end)
+
+	suite:case("flags a call that only sets offset", function(assert)
+		local violations = lintSource(rule, "UDim2.new(0, 5, 0, 1)")
+		assert.eq(#violations, 1)
+		assert.strContains(violations[1].message, "UDim2.fromOffset(5, 1)")
+		assert.eq(#lintSource(rule, "UDim2.new(0, 0, 0, 1)"), 1)
+		assert.eq(#lintSource(rule, "UDim2.new(0, a, 0, b)"), 1)
+	end)
+
+	suite:case("flags a zero that is written as -0", function(assert)
+		assert.eq(#lintSource(rule, "UDim2.new(-0, 5, 0, 1)"), 1)
+	end)
+
+	suite:case("flags a call statement and a call nested in an expression", function(assert)
+		assert.eq(#lintSource(rule, "UDim2.new(0, 5, 0, 1)"), 1)
+		assert.eq(#lintSource(rule, "local size = UDim2.new(0, 5, 0, 1)"), 1)
+	end)
+
+	suite:case("leaves a call that sets both scale and offset alone", function(assert)
+		assert.eq(#lintSource(rule, "UDim2.new(1, 1, 1, 1)"), 0)
+		assert.eq(#lintSource(rule, "UDim2.new(1, 0, 1, 5)"), 0)
+		assert.eq(#lintSource(rule, "UDim2.new(a, b, c, d)"), 0)
+	end)
+
+	suite:case("leaves the all-zero origin alone", function(assert)
+		assert.eq(#lintSource(rule, "UDim2.new(0, 0, 0, 0)"), 0)
+	end)
+
+	suite:case("leaves calls without four arguments alone", function(assert)
+		assert.eq(#lintSource(rule, "UDim2.new()"), 0)
+		assert.eq(#lintSource(rule, "UDim2.new(1, 0)"), 0)
+		assert.eq(#lintSource(rule, "UDim2.new(1, 0, 1)"), 0)
+	end)
+
+	suite:case("leaves the helpers alone", function(assert)
+		assert.eq(#lintSource(rule, "UDim2.fromScale(1, 1)"), 0)
+		assert.eq(#lintSource(rule, "UDim2.fromOffset(5, 1)"), 0)
+		assert.eq(#lintSource(rule, "UDim2:new(0, 5, 0, 1)"), 0)
+	end)
+
+	suite:case("leaves a local named UDim2 alone", function(assert)
+		assert.eq(#lintSource(rule, "local UDim2 = {}\nUDim2.new(0, 5, 0, 1)"), 0)
+	end)
+end)

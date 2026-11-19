@@ -26,6 +26,9 @@ The rules come in two folders:
 | `mixed_table` | A table constructor with both positional and keyed entries |
 | `multiple_statements` | More than one statement on a line |
 | `must_use`   | A standard library call whose return value is discarded, as in a `math.max(x, y)` statement |
+| `roblox_incorrect_color3_new_bounds` | `Color3.new` with a number outside 0 to 1, as in `Color3.new(255, 0, 0)`; use `Color3.fromRGB` |
+| `roblox_manual_fromscale_or_fromoffset` | A `UDim2.new` that sets only scale or only offset, which `UDim2.fromScale` or `UDim2.fromOffset` says more plainly |
+| `roblox_suspicious_udim2_new` | A `UDim2.new` call with one to three arguments, when it takes four |
 | `suspicious_reverse_loop` | `for i = #t, 1 do`, which needs a step of `-1` to count down |
 | `unbalanced_assignments` | An assignment with more values than names, or fewer values without a trailing call |
 
@@ -46,6 +49,8 @@ return {
 `high_cyclomatic_complexity` takes one option, `maximum_complexity`, which defaults to `40`. Set it under `lute.lint.ruleconfigs.high_cyclomatic_complexity.options`. Selene ships this lint off; here it's on by default, so a project that doesn't want it turns it off in its config.
 
 `deprecated` takes an `allow` option, a list of dotted paths to leave alone, such as `table.getn` or `table.*`. A path also allows everything under it.
+
+These rules only match the Roblox globals `Color3` and `UDim2`, so a local with the same name is left alone. Selene matches the name alone.
 
 ### Style
 
