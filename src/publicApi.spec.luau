@@ -13,7 +13,7 @@ local rulesPath = require("./rulesPath")
 -- the same Lute executable as the spec, since a Rokit-managed `lute` command
 -- can't pick a version in a folder without a rokit.toml.
 test.suite("public API", function(suite)
-	suite:case("RULES_PATH is the rules folder when required through an alias", function(assert)
+	suite:case("the rule folder paths are right when required through an alias", function(assert)
 		local packageRoot = path.dirname(path.dirname(rulesPath))
 		local consumer = path.join(system.tmpdir(), `code-quality-consumer-{os.time()}-{math.random(1e6)}`)
 		fs.createDirectory(consumer, { makeParents = true })
@@ -21,7 +21,13 @@ test.suite("public API", function(suite)
 			path.join(consumer, ".luaurc"),
 			json.serialize({ aliases = { CodeQuality = path.format(packageRoot) } })
 		)
-		fs.writeStringToFile(path.join(consumer, "main.luau"), 'print(require("@CodeQuality").RULES_PATH)')
+		fs.writeStringToFile(
+			path.join(consumer, "main.luau"),
+			'local CodeQuality = require("@CodeQuality")\n'
+				.. "print(CodeQuality.RULES_PATH)\n"
+				.. "print(CodeQuality.LINT_RULES_PATH)\n"
+				.. "print(CodeQuality.STYLE_RULES_PATH)\n"
+		)
 
 		local result = process.run(
 			{ path.format(process.execPath()), "run", "main.luau" },
@@ -31,6 +37,9 @@ test.suite("public API", function(suite)
 
 		assert.eq(result.stderr, "")
 		assert.eq(result.ok, true)
-		assert.eq(result.stdout:gsub("%s+$", ""), rulesPath)
+		local lines = result.stdout:gsub("%s+$", ""):split("\n")
+		assert.eq(lines[1], rulesPath)
+		assert.eq(lines[2], path.format(path.join(rulesPath, "lints")))
+		assert.eq(lines[3], path.format(path.join(rulesPath, "style")))
 	end)
 end)
