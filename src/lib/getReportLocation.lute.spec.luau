@@ -11,7 +11,7 @@ local function runLint(ruleFile: string, source: string): string
 		"lint",
 		"--no-default-lints",
 		"--rules",
-		`src/rules/{ruleFile}.luau`,
+		`src/rules/style/{ruleFile}.luau`,
 		"--string-input",
 		source,
 	})

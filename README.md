@@ -6,6 +6,11 @@ The house Luau style is written down as prose in [agent-skills](https://github.c
 
 ## Rules
 
+The rules come in two folders:
+
+- `src/rules/lints` catches likely bugs, as a replacement for [Selene](https://github.com/Kampfkarren/selene). It has no rules yet.
+- `src/rules/style` enforces the house style. It holds these rules:
+
 | Rule                        | What it asks for                                                                                       |
 | --------------------------- | ------------------------------------------------------------------------------------------------------ |
 | `annotate_nil_local`        | An annotation on locals that start as `nil`                                                            |
@@ -36,16 +41,21 @@ Explicit instantiation needs StyLua's `syntax = "Luau"` setting. Without it, Sty
 
 ## Using the rules
 
-Point `lute lint` at the `src/rules` folder of the installed package. The package exports that folder's absolute path as `RULES_PATH`, so a Lute script doesn't need to know where Loom installed it:
+Point `lute lint` at a rule folder of the installed package. The package exports each folder's absolute path, so a Lute script doesn't need to know where Loom installed it:
+
+- `LINT_RULES_PATH` is `src/rules/lints`, the Selene replacement.
+- `STYLE_RULES_PATH` is `src/rules/style`, the house style.
+- `RULES_PATH` is `src/rules`, which runs both.
 
 ```luau
 local CodeQuality = require("@luaupkg/CodeQuality@v0.3.0")
 local process = require("@std/process")
 
-process.run({ "lute", "lint", "--sequential", "--rules", CodeQuality.RULES_PATH, "src" })
+-- Only the Selene replacement. Use RULES_PATH to run the house style too.
+process.run({ "lute", "lint", "--sequential", "--rules", CodeQuality.LINT_RULES_PATH, "src" })
 ```
 
-`--sequential` works around a crash in Lute's parallel linting (#27).
+`--sequential` works around a crash in Lute's parallel linting (#27). `lute lint` keeps only the last `--rules` it's given, so passing the flag once per folder runs just the last one. Lute's built-in rules run alongside these unless you pass `--no-default-lints`.
 
 ## Code mods
 
@@ -87,13 +97,13 @@ lute run analyze
 lute test
 ```
 
-Each rule lives in `src/rules` with a spec beside it that runs the rule over snippets of source. `lute lint --rules` loads every file in that folder and skips the ones that don't return a rule, so the specs ship with the rules and load in any repo that runs them. Keep their requires relative, since a repo alias like `@repo` won't resolve there. Shared helpers go in `src/lib`.
+Each rule lives in `src/rules/lints` or `src/rules/style` with a spec beside it that runs the rule over snippets of source. `lute lint --rules` loads every file in the folder it's given, including the files in its subfolders, and skips the ones that don't return a rule, so the specs ship with the rules and load in any repo that runs them. Keep their requires relative, since a repo alias like `@repo` won't resolve there. Shared helpers go in `src/lib`.
 
 ### Adding a rule
 
-1. Add `src/rules/<ruleName>.luau`. It returns a frozen `types.LintRule` from `src/types.luau`: a `name` in snake case and a `lint` function that takes the parsed file and returns its violations. Find nodes with `@std/syntax/query` and match them with the `is*` helpers in `@std/syntax/utils`, as the existing rules do. Write against the typedefs for the pinned Lute version in `~/.lute/typedefs`.
-2. Add `src/rules/<ruleName>.spec.luau`. Run snippets through `src/lib/lintSource.luau` and assert on the violations. Cover the code the rule flags and the nearby code it leaves alone.
+1. Add `src/rules/lints/<ruleName>.luau` for a lint that catches likely bugs, or `src/rules/style/<ruleName>.luau` for house style. It returns a frozen `types.LintRule` from `src/types.luau`: a `name` in snake case and a `lint` function that takes the parsed file and returns its violations. Find nodes with `@std/syntax/query` and match them with the `is*` helpers in `@std/syntax/utils`, as the existing rules do. Write against the typedefs for the pinned Lute version in `~/.lute/typedefs`.
+2. Add `<ruleName>.spec.luau` beside it. Run snippets through `src/lib/lintSource.luau` and assert on the violations. Cover the code the rule flags and the nearby code it leaves alone.
 3. If the rule reports inside a table type, report at `getReportLocation`'s location instead, and add a case to `src/lib/getReportLocation.lute.spec.luau`. Its comment explains why.
-4. Add a row to the rules table above, and a change entry in `.changes/`.
+4. Add a row to its folder's table above, and a change entry in `.changes/`.
 
 A code mod follows the same pattern in `src/mods`. It returns a frozen table with a `transform` function, which takes the file's parse result and returns replacements for the nodes it rewrites. Its spec runs snippets through `src/lib/transformSource.luau` and compares the rewritten source. When a mod fixes what a rule flags, share the matching code through `src/lib`, as `stringMethodCall` does with `getStringMethodName`.
