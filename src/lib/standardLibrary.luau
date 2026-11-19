@@ -3,9 +3,9 @@
 -- Selene reads these from its `default_std` definitions, which cover every field,
 -- function, and method in the standard library. The lists here copy the global
 -- functions from Selene 0.31.0's `lua51.yml`, `luau.yml`, and `roblox_base.yml`,
--- which its `roblox` standard library builds on. Selene's generated Roblox API
--- data isn't in its repository, so Roblox deprecations beyond `roblox_base.yml`
--- aren't listed yet.
+-- which its `roblox` standard library builds on. Deprecated Roblox engine APIs,
+-- such as `workspace:FindPartOnRay`, come from robloxApi.luau instead, which is
+-- generated from Roblox's API dump.
 --
 -- Methods on values, such as `signal:connect(...)`, aren't listed. A rule that
 -- reads syntax can't tell what type a value has, so it can't tell which
