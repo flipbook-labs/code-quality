@@ -133,7 +133,7 @@ end
 
 local function transform(context: transformTypes.Context<Options>): syntaxTypes.Replacements
 	local replacements: syntaxTypes.Replacements = {}
-	local tightMinusOperands = codemodEdits.findTightMinusOperands(context.parseresult)
+	local operandContexts = codemodEdits.findOperandContexts(context.parseresult)
 
 	-- Assignments write to the global rather than read it, so their targets
 	-- stay. Prefixes, like the `x` in `x.y` or `x()`, need parentheses around
@@ -178,7 +178,7 @@ local function transform(context: transformTypes.Context<Options>): syntaxTypes.
 					text = `;{text}`
 				end
 			end
-			replacements[expr] = codemodEdits.separateMinus(expr, text, tightMinusOperands)
+			replacements[expr] = codemodEdits.fitReplacement(expr, text, operandContexts)
 		end)
 
 	return replacements

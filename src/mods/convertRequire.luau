@@ -36,8 +36,10 @@
 --
 -- Darklua logs a warning and leaves a require alone when it can't resolve it.
 -- This mod stops with an error instead, so a build can't ship a require that
--- won't load. List the requires a build expects to leave alone in `ignore`. A child whose name isn't a valid identifier is indexed with
--- `["name"]`, where darklua writes `['name']`.
+-- won't load. List the requires a build expects to leave alone in `ignore`.
+--
+-- A child whose name isn't a valid identifier, or is a reserved word like
+-- `end`, is indexed with `["name"]`, where darklua writes `['name']`.
 --
 -- Run it with `lute transform <package>/src/mods/convertRequire.luau <files>`.
 
@@ -250,6 +252,35 @@ local function findInstance(target: string): { string }?
 	return instanceByFolder[target]
 end
 
+-- Luau's reserved words, which can't follow a `.` in an index.
+local KEYWORDS = table.freeze({
+	["and"] = true,
+	["break"] = true,
+	["do"] = true,
+	["else"] = true,
+	["elseif"] = true,
+	["end"] = true,
+	["false"] = true,
+	["for"] = true,
+	["function"] = true,
+	["if"] = true,
+	["in"] = true,
+	["local"] = true,
+	["nil"] = true,
+	["not"] = true,
+	["or"] = true,
+	["repeat"] = true,
+	["return"] = true,
+	["then"] = true,
+	["true"] = true,
+	["until"] = true,
+	["while"] = true,
+})
+
+local function isIdentifier(name: string): boolean
+	return name:match("^[%a_][%w_]*$") ~= nil and not KEYWORDS[name]
+end
+
 -- Builds `script.Parent...` from one instance to another.
 local function relativeInstancePath(from: { string }, to: { string }): string
 	local shared = 0
@@ -260,7 +291,7 @@ local function relativeInstancePath(from: { string }, to: { string }): string
 	local expression = "script" .. string.rep(".Parent", #from - shared)
 	for index = shared + 1, #to do
 		local name = to[index]
-		expression ..= if name:match("^[%a_][%w_]*$") then `.{name}` else `[{evaluator.quoteString(name)}]`
+		expression ..= if isIdentifier(name) then `.{name}` else `[{evaluator.quoteString(name)}]`
 	end
 	return expression
 end
@@ -317,14 +348,18 @@ local function transform(context: transformTypes.Context<Options>): syntaxTypes.
 			-- Luau only resolves a plain string literal, so a backtick
 			-- string, even one without `{}` in it, stays as it is.
 			local argument = utils.isExprConstantString(call.arguments[1])
-			return #call.arguments == 1
-				and argument ~= nil
-				and argument.quoteStyle ~= "interp"
-				and not isIgnored(argument.value.text)
+			if #call.arguments ~= 1 or argument == nil or argument.quoteStyle == "interp" then
+				return false
+			end
+			local requirePath = evaluator.stringLiteralValue(argument)
+			return requirePath ~= nil and not isIgnored(requirePath)
 		end)
 		:replace(function(call)
 			assert(requirerInstance, `{requirer} isn't in the sourcemap, so its requires can't be resolved`)
-			local requirePath = (call.arguments[1] :: syntax.CstExprConstantString).value.text
+			-- The literal is decoded, so escapes like `\111` resolve as the
+			-- characters they stand for.
+			local requirePath =
+				evaluator.stringLiteralValue(call.arguments[1] :: syntax.CstExprConstantString) :: string
 			local target = resolveRequirePath(requirer, requirePath)
 			local instance = findInstance(target)
 			assert(instance, `{requirer}: require("{requirePath}") resolves to {target}, which isn't in the sourcemap`)

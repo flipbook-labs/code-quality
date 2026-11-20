@@ -124,4 +124,10 @@ test.suite("removeUnusedIfBranch code mod", function(suite)
 			"local x = if c then 1 elseif not { f() } then nil else 3"
 		)
 	end)
+
+	suite:case("keeps an interpolated condition that might call __tostring", function(assert)
+		local source = lines({ "local obj = make()", "if `{obj}` then", "\trun()", "end" })
+		assert.eq(simplify(source), source)
+		assert.eq(simplify(lines({ "if `{1}` then", "\trun()", "end" })), lines({ "run()" }))
+	end)
 end)

@@ -34,7 +34,7 @@ local evaluator = require("../lib/evaluator")
 
 local function transform(context: transformTypes.Context): syntaxTypes.Replacements
 	local replacements: syntaxTypes.Replacements = {}
-	local tightMinusOperands = codemodEdits.findTightMinusOperands(context.parseresult)
+	local operandContexts = codemodEdits.findOperandContexts(context.parseresult)
 	local folder = visitor.create()
 
 	-- For `a and b` or `a or b` with a known left side, returns whichever
@@ -77,7 +77,7 @@ local function transform(context: transformTypes.Context): syntaxTypes.Replaceme
 	function folder.visitExpr(expr: syntax.CstExpr): boolean
 		local text = fold(expr)
 		if text then
-			replacements[expr] = codemodEdits.separateMinus(expr, text, tightMinusOperands)
+			replacements[expr] = codemodEdits.fitReplacement(expr, text, operandContexts)
 			return false
 		end
 		return true

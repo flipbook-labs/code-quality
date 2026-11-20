@@ -156,31 +156,69 @@ local function positionKey(location: syntax.Span): string
 	return `{location.beginLine}:{location.beginColumn}`
 end
 
--- Finds the expressions that sit right after a `-` with no space between, as
--- in `a -b` or `-x`. Writing a negative number there would make `--`, which
--- starts a comment.
-local function findTightMinusOperands(parseresult: syntax.CstParseResult): { [string]: true }
-	local positions: { [string]: true } = {}
-	local function check(operator: syntax.CstToken, operand: syntax.CstExpr)
+-- The places in a file where a literal can't simply take an expression's
+-- spot, each keyed by the expression's position:
+--
+-- - `afterMinus` holds the expressions right after a `-` with no space
+--   between, as in `a -b` or `-x`. A negative number there would make `--`,
+--   which starts a comment.
+-- - `beforeConcat` holds the left sides of a `..` with no space between, as
+--   in `x..y`. A number there would read as a malformed number, like `1..y`.
+-- - `powerBase` holds the left sides of `^`. Luau reads `-5 ^ 2` as
+--   `-(5 ^ 2)`, so a negative number there needs parentheses.
+export type OperandContexts = {
+	afterMinus: { [string]: true },
+	beforeConcat: { [string]: true },
+	powerBase: { [string]: true },
+}
+
+local function findOperandContexts(parseresult: syntax.CstParseResult): OperandContexts
+	local contexts: OperandContexts = {
+		afterMinus = {},
+		beforeConcat = {},
+		powerBase = {},
+	}
+	local function checkMinus(operator: syntax.CstToken, operand: syntax.CstExpr)
 		if operator.text == "-" and #operator.trailingTrivia == 0 then
-			positions[positionKey(operand.location)] = true
+			contexts.afterMinus[positionKey(operand.location)] = true
 		end
 	end
 	query.findAllFromRoot(parseresult, utils.isExpr):forEach(function(expr)
 		if expr.tag == "binary" then
-			check(expr.operator, expr.rhsOperand)
+			checkMinus(expr.operator, expr.rhsOperand)
+			local operator = expr.operator.text
+			if
+				operator == ".."
+				and #expr.operator.leadingTrivia == 0
+				and #trivia.rightmostTrivia(expr.lhsOperand) == 0
+			then
+				contexts.beforeConcat[positionKey(expr.lhsOperand.location)] = true
+			elseif operator == "^" then
+				contexts.powerBase[positionKey(expr.lhsOperand.location)] = true
+			end
 		elseif expr.tag == "unary" then
-			check(expr.operator, expr.operand)
+			checkMinus(expr.operator, expr.operand)
 		end
 	end)
-	return positions
+	return contexts
 end
 
--- Puts a space in front of replacement text for `node` when the text starts
--- with `-` and `node` follows a `-` with no space between.
-local function separateMinus(node: syntax.CstExpr, text: string, tightMinusOperands: { [string]: true }): string
-	if text:sub(1, 1) == "-" and tightMinusOperands[positionKey(node.location)] then
-		return ` {text}`
+-- Adjusts replacement text for `node` so it reads the same where `node`
+-- stood: parentheses around a negative number that's raised to a power, a
+-- space after a number that a `..` follows, and a space before a negative
+-- number that follows a `-`.
+local function fitReplacement(node: syntax.CstExpr, text: string, contexts: OperandContexts): string
+	local key = positionKey(node.location)
+	local negative = text:sub(1, 1) == "-"
+	if negative and contexts.powerBase[key] then
+		text = `({text})`
+		negative = false
+	end
+	if contexts.beforeConcat[key] and text:match("^%-?[%d%.]") then
+		text ..= " "
+	end
+	if negative and contexts.afterMinus[key] then
+		text = ` {text}`
 	end
 	return text
 end
@@ -208,8 +246,8 @@ end
 
 return table.freeze({
 	DELETE = DELETE,
-	findTightMinusOperands = findTightMinusOperands,
-	separateMinus = separateMinus,
+	findOperandContexts = findOperandContexts,
+	fitReplacement = fitReplacement,
 	isAtom = isAtom,
 	triviaText = triviaText,
 	printWithoutTrivia = printWithoutTrivia,

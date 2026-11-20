@@ -271,13 +271,13 @@ end
 local function simplifyExpression(
 	expr: syntax.CstExprIfElse,
 	replacements: syntaxTypes.Replacements,
-	tightMinusOperands: { [string]: true }
+	operandContexts: codemodEdits.OperandContexts
 )
 	local branches = expressionBranches(expr)
 
 	local function replaceWhole(result: syntax.CstExpr)
 		local text = asReplacement(result, replacements)
-		replacements[expr] = codemodEdits.separateMinus(expr, text, tightMinusOperands)
+		replacements[expr] = codemodEdits.fitReplacement(expr, text, operandContexts)
 	end
 
 	-- Leading branches that never run are skipped. The first branch that
@@ -346,7 +346,7 @@ end
 
 local function transform(context: transformTypes.Context): syntaxTypes.Replacements
 	local replacements: syntaxTypes.Replacements = {}
-	local tightMinusOperands = codemodEdits.findTightMinusOperands(context.parseresult)
+	local operandContexts = codemodEdits.findOperandContexts(context.parseresult)
 
 	local placements: { [syntax.CstStat]: Placement } = {}
 	query.findAllFromRoot(context.parseresult, utils.isStatBlock):forEach(function(block)
@@ -366,7 +366,7 @@ local function transform(context: transformTypes.Context): syntaxTypes.Replaceme
 		if node.kind == "stat" then
 			simplifyStatement(node, placements[node], replacements)
 		else
-			simplifyExpression(node, replacements, tightMinusOperands)
+			simplifyExpression(node, replacements, operandContexts)
 		end
 	end
 

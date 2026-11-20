@@ -385,8 +385,10 @@ function hasSideEffects(expr: syntax.CstExpr): boolean
 		end
 		return false
 	elseif expr.tag == "interpolatedstring" then
+		-- Interpolation turns each value into a string with `tostring`, which
+		-- runs `__tostring` on a value that might have a metatable.
 		for _, inner in expr.expressions do
-			if hasSideEffects(inner) then
+			if hasSideEffects(inner) or mightHaveMetatable(evaluate(inner)) then
 				return true
 			end
 		end
@@ -457,4 +459,5 @@ return table.freeze({
 	canReturnMultipleValues = canReturnMultipleValues,
 	toLiteral = toLiteral,
 	quoteString = quoteString,
+	stringLiteralValue = stringLiteralValue,
 })

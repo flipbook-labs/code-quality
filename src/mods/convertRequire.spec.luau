@@ -23,6 +23,7 @@ local SOURCEMAP: json.Value = {
 			children = {
 				{ name = "Foo", filePaths = { "src/Foo.luau" } },
 				{ name = "my-module", filePaths = { "src/my-module.luau" } },
+				{ name = "end", filePaths = { "src/end.luau" } },
 				{
 					name = "Bar",
 					filePaths = { "src/Bar/init.luau" },
@@ -139,6 +140,18 @@ test.suite("convertRequire code mod", function(suite)
 		assert.eq(
 			convert('local Bar = require("./Bar")', "dist/Foo.luau", options),
 			"local Bar = require(script.Parent.Bar)"
+		)
+	end)
+
+	suite:case("indexes a reserved word with brackets", function(assert)
+		assert.eq(convert('local e = require("./end")', "src/Foo.luau"), 'local e = require(script.Parent["end"])')
+	end)
+
+	suite:case("decodes escapes in the require string", function(assert)
+		assert.eq(convert('local b = require("./B\\97r")', "src/Foo.luau"), "local b = require(script.Parent.Bar)")
+		assert.eq(
+			convert('local fs = require("@st\\100/fs")', "src/Foo.luau", { ignore = "@std/*" }),
+			'local fs = require("@st\\100/fs")'
 		)
 	end)
 

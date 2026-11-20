@@ -84,4 +84,9 @@ test.suite("computeExpression code mod", function(suite)
 		local source = "local x = f() and 1"
 		assert.eq(compute(source), source)
 	end)
+
+	suite:case("keeps a folded number apart from a following ..", function(assert)
+		assert.eq(compute("local s = #'a'..suffix"), "local s = 1 ..suffix")
+		assert.eq(compute("local s = #'a' .. suffix"), "local s = 1 .. suffix")
+	end)
 end)
