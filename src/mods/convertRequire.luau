@@ -253,29 +253,34 @@ local function findInstance(target: string): { string }?
 end
 
 -- Luau's reserved words, which can't follow a `.` in an index.
-local KEYWORDS = table.freeze({
-	["and"] = true,
-	["break"] = true,
-	["do"] = true,
-	["else"] = true,
-	["elseif"] = true,
-	["end"] = true,
-	["false"] = true,
-	["for"] = true,
-	["function"] = true,
-	["if"] = true,
-	["in"] = true,
-	["local"] = true,
-	["nil"] = true,
-	["not"] = true,
-	["or"] = true,
-	["repeat"] = true,
-	["return"] = true,
-	["then"] = true,
-	["true"] = true,
-	["until"] = true,
-	["while"] = true,
-})
+local KEYWORDS: { [string]: boolean } = {}
+for _, word in
+	{
+		"and",
+		"break",
+		"do",
+		"else",
+		"elseif",
+		"end",
+		"false",
+		"for",
+		"function",
+		"if",
+		"in",
+		"local",
+		"nil",
+		"not",
+		"or",
+		"repeat",
+		"return",
+		"then",
+		"true",
+		"until",
+		"while",
+	}
+do
+	KEYWORDS[word] = true
+end
 
 local function isIdentifier(name: string): boolean
 	return name:match("^[%a_][%w_]*$") ~= nil and not KEYWORDS[name]
