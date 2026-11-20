@@ -13,40 +13,124 @@ end
 
 test.suite("removeUnusedIfBranch code mod", function(suite)
 	suite:case("removes an if that never runs", function(assert)
-		assert.eq(simplify(lines({ "a()", "if false then", "\tb()", "end", "c()" })), lines({ "a()", "c()" }))
+		assert.eq(
+			simplify(lines({
+				"a()",
+				"if false then",
+				"\tb()",
+				"end",
+				"c()",
+			})),
+			lines({ "a()", "c()" })
+		)
 	end)
 
 	suite:case("moves the block of an if that always runs into the enclosing block", function(assert)
-		assert.eq(simplify(lines({ "if true then", "\tprint(1)", "end", "c()" })), lines({ "print(1)", "c()" }))
+		assert.eq(
+			simplify(lines({
+				"if true then",
+				"\tprint(1)",
+				"end",
+				"c()",
+			})),
+			lines({ "print(1)", "c()" })
+		)
 	end)
 
 	suite:case("keeps the block's locals scoped with do", function(assert)
-		local source = lines({ "if true then", "\tlocal x = 1", "\tprint(x)", "end" })
-		assert.eq(simplify(source), lines({ "do", "\tlocal x = 1", "\tprint(x)", "end" }))
+		local source = lines({
+			"if true then",
+			"\tlocal x = 1",
+			"\tprint(x)",
+			"end",
+		})
+		assert.eq(
+			simplify(source),
+			lines({
+				"do",
+				"\tlocal x = 1",
+				"\tprint(x)",
+				"end",
+			})
+		)
 		local withType = lines({ "if true then", "\ttype T = number", "end" })
 		assert.eq(simplify(withType), lines({ "do", "\ttype T = number", "end" }))
 	end)
 
 	suite:case("wraps a block that ends in return", function(assert)
-		local source = lines({ "local function f()", "\tif true then", "\t\treturn 1", "\tend", "\tprint(2)", "end" })
-		local expected = lines({ "local function f()", "\tdo", "\t\treturn 1", "\tend", "\tprint(2)", "end" })
+		local source = lines({
+			"local function f()",
+			"\tif true then",
+			"\t\treturn 1",
+			"\tend",
+			"\tprint(2)",
+			"end",
+		})
+		local expected = lines({
+			"local function f()",
+			"\tdo",
+			"\t\treturn 1",
+			"\tend",
+			"\tprint(2)",
+			"end",
+		})
 		assert.eq(simplify(source), expected)
 	end)
 
 	suite:case("wraps a block when a statement around it opens with (", function(assert)
-		local first = lines({ "a()", "if true then", "\t(f or g)()", "end" })
-		assert.eq(simplify(first), lines({ "a()", "do", "\t(f or g)()", "end" }))
-		local after = lines({ "if true then", "\ta()", "end", "(f or g)()" })
-		assert.eq(simplify(after), lines({ "do", "\ta()", "end", "(f or g)()" }))
+		local first = lines({
+			"a()",
+			"if true then",
+			"\t(f or g)()",
+			"end",
+		})
+		assert.eq(
+			simplify(first),
+			lines({
+				"a()",
+				"do",
+				"\t(f or g)()",
+				"end",
+			})
+		)
+		local after = lines({
+			"if true then",
+			"\ta()",
+			"end",
+			"(f or g)()",
+		})
+		assert.eq(
+			simplify(after),
+			lines({
+				"do",
+				"\ta()",
+				"end",
+				"(f or g)()",
+			})
+		)
 	end)
 
 	suite:case("runs the else when every branch is removed", function(assert)
-		local source = lines({ "if false then", "\ta()", "else", "\tb()", "end" })
+		local source = lines({
+			"if false then",
+			"\ta()",
+			"else",
+			"\tb()",
+			"end",
+		})
 		assert.eq(simplify(source), lines({ "b()" }))
 	end)
 
 	suite:case("removes branches that never run", function(assert)
-		local source = lines({ "if false then", "\ta()", "elseif c then", "\tb()", "elseif nil then", "\td()", "end" })
+		local source = lines({
+			"if false then",
+			"\ta()",
+			"elseif c then",
+			"\tb()",
+			"elseif nil then",
+			"\td()",
+			"end",
+		})
 		assert.eq(simplify(source), lines({ "if c then", "\tb()", "end" }))
 	end)
 
@@ -62,7 +146,16 @@ test.suite("removeUnusedIfBranch code mod", function(suite)
 			"\tf()",
 			"end",
 		})
-		assert.eq(simplify(source), lines({ "if c then", "\ta()", "else", "\tb()", "end" }))
+		assert.eq(
+			simplify(source),
+			lines({
+				"if c then",
+				"\ta()",
+				"else",
+				"\tb()",
+				"end",
+			})
+		)
 	end)
 
 	suite:case("removes an empty else", function(assert)
@@ -72,9 +165,31 @@ test.suite("removeUnusedIfBranch code mod", function(suite)
 	suite:case("keeps a condition with side effects", function(assert)
 		-- A table constructor is always truthy, but building this one calls
 		-- `f`.
-		local never = lines({ "if not { f() } then", "\ta()", "else", "\tb()", "end" })
-		assert.eq(simplify(never), lines({ "if not { f() } then", "else", "\tb()", "end" }))
-		local always = lines({ "if { f() } then", "\ta()", "elseif c then", "\td()", "else", "\tb()", "end" })
+		local never = lines({
+			"if not { f() } then",
+			"\ta()",
+			"else",
+			"\tb()",
+			"end",
+		})
+		assert.eq(
+			simplify(never),
+			lines({
+				"if not { f() } then",
+				"else",
+				"\tb()",
+				"end",
+			})
+		)
+		local always = lines({
+			"if { f() } then",
+			"\ta()",
+			"elseif c then",
+			"\td()",
+			"else",
+			"\tb()",
+			"end",
+		})
 		assert.eq(simplify(always), lines({ "if { f() } then", "\ta()", "end" }))
 	end)
 
@@ -84,12 +199,27 @@ test.suite("removeUnusedIfBranch code mod", function(suite)
 	end)
 
 	suite:case("simplifies ifs inside the block it keeps", function(assert)
-		local source = lines({ "if true then", "\tif false then", "\t\ta()", "\tend", "\tb()", "end" })
+		local source = lines({
+			"if true then",
+			"\tif false then",
+			"\t\ta()",
+			"\tend",
+			"\tb()",
+			"end",
+		})
 		assert.eq(simplify(source), lines({ "b()" }))
 	end)
 
 	suite:case("leaves an if with conditions it can't evaluate alone", function(assert)
-		local source = lines({ "if a then", "\tb()", "elseif c == 1 then", "\td()", "else", "\te()", "end" })
+		local source = lines({
+			"if a then",
+			"\tb()",
+			"elseif c == 1 then",
+			"\td()",
+			"else",
+			"\te()",
+			"end",
+		})
 		assert.eq(simplify(source), source)
 	end)
 
@@ -126,7 +256,12 @@ test.suite("removeUnusedIfBranch code mod", function(suite)
 	end)
 
 	suite:case("keeps an interpolated condition that might call __tostring", function(assert)
-		local source = lines({ "local obj = make()", "if `{obj}` then", "\trun()", "end" })
+		local source = lines({
+			"local obj = make()",
+			"if `{obj}` then",
+			"\trun()",
+			"end",
+		})
 		assert.eq(simplify(source), source)
 		assert.eq(simplify(lines({ "if `{1}` then", "\trun()", "end" })), lines({ "run()" }))
 	end)

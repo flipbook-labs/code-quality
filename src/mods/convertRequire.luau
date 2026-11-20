@@ -243,7 +243,14 @@ local function resolveRequirePath(requirer: string, requirePath: string): string
 end
 
 local function findInstance(target: string): { string }?
-	for _, candidate in { `{target}.luau`, `{target}.lua`, `{target}/init.luau`, `{target}/init.lua` } do
+	for _, candidate in
+		{
+			`{target}.luau`,
+			`{target}.lua`,
+			`{target}/init.luau`,
+			`{target}/init.lua`,
+		}
+	do
 		local instance = moduleByFile[candidate]
 		if instance then
 			return instance
