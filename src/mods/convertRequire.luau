@@ -12,6 +12,15 @@
 -- becomes, and the require walks from the requiring file's instance to that
 -- one.
 --
+-- Some packages are written against the instance tree rather than the files
+-- on disk. Wally, for one, puts a package's dependencies beside it as link
+-- modules, so react-charm's `require("./Charm")` names a sibling instance that
+-- has no file next to the package's source. When a `./` or `../` require
+-- finds no file or folder on disk, the mod reads it against the instance tree
+-- instead, the way Roblox would: `./` starts from the requiring script's
+-- parent, and each `../` goes up one more. The instance it lands on has to be
+-- in the sourcemap.
+--
 -- It takes four options:
 --
 -- - `sourcemap`, the path to a sourcemap from `rojo sourcemap`. It defaults to
@@ -81,6 +90,9 @@ type LuauConfig = {
 -- module sits in.
 local moduleByFile: { [string]: { string } } = {}
 local instanceByFolder: { [string]: { string } } = {}
+-- Every instance in the sourcemap, keyed by `instanceKey`, for requires that
+-- are read against the instance tree.
+local knownInstances: { [string]: true } = {}
 local aliasesByFolder: { [string]: { [string]: string } } = {}
 local sourceFolder = ""
 local buildFolder = ""
@@ -146,7 +158,14 @@ local function isLuauFile(filePath: string): boolean
 	return filePath:match("%.luau?$") ~= nil
 end
 
+-- Instance names can hold any character but NUL, so NUL joins them.
+local function instanceKey(instancePath: { string }): string
+	return table.concat(instancePath, "\0")
+end
+
 local function indexSourcemap(node: SourcemapNode, instancePath: { string }, sourcemapFolder: string)
+	knownInstances[instanceKey(instancePath)] = true
+
 	for _, filePath in node.filePaths or {} do
 		local file = join(sourcemapFolder, filePath)
 		if isLuauFile(file) then
@@ -242,21 +261,54 @@ local function resolveRequirePath(requirer: string, requirePath: string): string
 	return join(dirname(modulePath), requirePath)
 end
 
+-- The files Luau would try for a require that resolves to `target`.
+local function moduleCandidates(target: string): { string }
+	return {
+		`{target}.luau`,
+		`{target}.lua`,
+		`{target}/init.luau`,
+		`{target}/init.lua`,
+	}
+end
+
 local function findInstance(target: string): { string }?
-	for _, candidate in
-		{
-			`{target}.luau`,
-			`{target}.lua`,
-			`{target}/init.luau`,
-			`{target}/init.lua`,
-		}
-	do
+	for _, candidate in moduleCandidates(target) do
 		local instance = moduleByFile[candidate]
 		if instance then
 			return instance
 		end
 	end
 	return instanceByFolder[target]
+end
+
+local function existsOnDisk(target: string): boolean
+	if fs.exists(target) then
+		return true
+	end
+	for _, candidate in moduleCandidates(target) do
+		if fs.exists(candidate) then
+			return true
+		end
+	end
+	return false
+end
+
+-- Reads a `./` or `../` require against the instance tree, starting from the
+-- requiring script's parent. Returns nil when it lands outside the sourcemap.
+local function findRelativeInstance(requirerInstance: { string }, requirePath: string): { string }?
+	local instance = table.clone(requirerInstance)
+	table.remove(instance)
+	for index, segment in requirePath:split("/") do
+		if segment == ".." then
+			if #instance == 0 then
+				return nil
+			end
+			table.remove(instance)
+		elseif segment ~= "" and not (segment == "." and index == 1) then
+			table.insert(instance, segment)
+		end
+	end
+	return if knownInstances[instanceKey(instance)] then instance else nil
 end
 
 -- Luau's reserved words, which can't follow a `.` in an index.
@@ -333,6 +385,7 @@ local function configure(options: Options)
 
 	moduleByFile = {}
 	instanceByFolder = {}
+	knownInstances = {}
 	aliasesByFolder = {}
 	indexSourcemap(sourcemap :: SourcemapNode, {}, dirname(sourcemapPath))
 end
@@ -374,6 +427,9 @@ local function transform(context: transformTypes.Context<Options>): syntaxTypes.
 				evaluator.stringLiteralValue(call.arguments[1] :: syntax.CstExprConstantString) :: string
 			local target = resolveRequirePath(requirer, requirePath)
 			local instance = findInstance(target)
+			if instance == nil and not existsOnDisk(target) and requirePath:match("^%.%.?/") then
+				instance = findRelativeInstance(requirerInstance, requirePath)
+			end
 			assert(instance, `{requirer}: require("{requirePath}") resolves to {target}, which isn't in the sourcemap`)
 			return `require({relativeInstancePath(requirerInstance, instance)})`
 		end)

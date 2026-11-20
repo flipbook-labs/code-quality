@@ -9,6 +9,10 @@ local transformSource = require("../lib/transformSource")
 
 -- A project laid out the way Rojo would build it: `Packages` holds the
 -- package's dependencies, and `src` becomes `Packages.Storyteller`.
+-- `Packages._Index` is laid out the way Wally installs a package: `charm-ish`
+-- sits beside a link module for its dependency, `Dep`. On disk, `Dep.lua` sits
+-- one folder above the package's `src`, so `./Dep` from the package finds no
+-- file there.
 local root = path.format(path.join(system.tmpdir(), `code-quality-convert-require-{math.random(1, 1e9)}`))
 local sourcemapPath = path.format(path.join(root, "sourcemap.json"))
 
@@ -17,6 +21,27 @@ local SOURCEMAP: json.Value = {
 	className = "Folder",
 	children = {
 		{ name = "React", filePaths = { "Packages/React.lua" } },
+		{
+			name = "_Index",
+			children = {
+				{
+					name = "charm-ish@1.0.0",
+					children = {
+						{ name = "Dep", filePaths = { "Packages/_Index/charm-ish@1.0.0/Dep.lua" } },
+						{
+							name = "charm-ish",
+							filePaths = { "Packages/_Index/charm-ish@1.0.0/charm-ish/src/init.luau" },
+							children = {
+								{
+									name = "Util",
+									filePaths = { "Packages/_Index/charm-ish@1.0.0/charm-ish/src/Util.luau" },
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 		{
 			name = "Storyteller",
 			filePaths = { "src/init.luau" },
@@ -178,6 +203,38 @@ test.suite("convertRequire code mod", function(suite)
 		assert.throws(function()
 			convert('require("./Foo")', "scripts/build.luau")
 		end)
+	end)
+
+	suite:case("reads a relative require with no file on disk against the instance tree", function(assert)
+		local package = "Packages/_Index/charm-ish@1.0.0/charm-ish/src"
+		assert.eq(
+			convert('local Dep = require("./Dep")', `{package}/init.luau`),
+			"local Dep = require(script.Parent.Dep)"
+		)
+		assert.eq(
+			convert('local Dep = require("../Dep")', `{package}/Util.luau`),
+			"local Dep = require(script.Parent.Parent.Dep)"
+		)
+	end)
+
+	suite:case("only reads ./ and ../ requires against the instance tree", function(assert)
+		local package = "Packages/_Index/charm-ish@1.0.0/charm-ish/src"
+		assert.throws(function()
+			convert('require("@self/Dep")', `{package}/init.luau`)
+		end)
+		assert.throws(function()
+			convert('require("./Missing")', `{package}/init.luau`)
+		end)
+	end)
+
+	suite:case("doesn't read a require against the instance tree when its file exists", function(assert)
+		-- The file is on disk but outside the sourcemap, so the require points
+		-- at something Rojo doesn't sync, not at the `Dep` instance.
+		writeFile("Packages/_Index/charm-ish@1.0.0/charm-ish/Dep.luau", "return nil")
+		assert.throws(function()
+			convert('require("./Dep")', "Packages/_Index/charm-ish@1.0.0/charm-ish/src/init.luau")
+		end)
+		fs.remove(path.join(root, "Packages/_Index/charm-ish@1.0.0/charm-ish/Dep.luau"))
 	end)
 
 	suite:case("leaves the requires listed in ignore alone", function(assert)
