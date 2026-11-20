@@ -1,23 +1,22 @@
--- Replaces reads of a build global, like `_G.BUILD_CHANNEL`, with its value
+-- Replaces reads of build globals, like `_G.BUILD_CHANNEL`, with their values
 -- for this build, replacing darklua's `inject_global_value` rule. Flipbook
 -- builds use it to bake values such as the release channel into the plugin.
--- Run it once per global, then run `computeExpression` and
--- `removeUnusedIfBranch` to drop the code a value turns off.
+-- One run sets every global a build needs. Run `computeExpression` and
+-- `removeUnusedIfBranch` after it to drop the code a value turns off.
 --
--- It takes three options:
---
--- - `identifier`, the global's name. It's required.
--- - `env`, an environment variable to read the value from. Its text becomes a
---   string literal.
--- - `value`, the value as JSON, such as `true`, `12`, or `"prod"`. It's used
---   when `env` isn't given, or names a variable that isn't set. `null` and an
---   empty value mean `nil`.
+-- It takes one option, `globals`, a JSON object that maps each global's name
+-- to its value. A value is JSON `null`, a boolean, a number, or a string, and
+-- `null` means `nil`. A value can also be an object that reads an
+-- environment variable: `{ "env": "NAME" }` uses the variable's text as a
+-- string, and an optional `"value"` beside it is used when the variable
+-- isn't set.
 --
 -- For example, this replaces `_G.BUILD_CHANNEL` with the text of the
--- `BUILD_CHANNEL` environment variable:
+-- `BUILD_CHANNEL` environment variable, or `"dev"` when it isn't set, and
+-- `_G.__DEV__` with `false`:
 --
 -- ```sh
--- lute transform <package>/src/mods/injectGlobalValue.luau dist -- --identifier BUILD_CHANNEL --env BUILD_CHANNEL
+-- lute transform <package>/src/mods/injectGlobalValue.luau dist -- --globals '{"BUILD_CHANNEL":{"env":"BUILD_CHANNEL","value":"dev"},"__DEV__":false}'
 -- ```
 --
 -- As in darklua, `_G.NAME`, `_G["NAME"]`, and a bare global `NAME` are all
@@ -27,9 +26,10 @@
 -- prefix, as in
 -- `_G.NAME:lower()`, gets parentheses.
 --
--- Darklua takes the default for a missing variable from a separate
--- `default_value` property, where this mod uses `value`. Darklua's `env_json`,
--- which reads JSON from a variable, has no equivalent here.
+-- Darklua configures one global per rule entry and takes the default for a
+-- missing variable from a separate `default_value` property, where this mod
+-- uses `value`. Darklua's `env_json`, which reads JSON from a variable, has
+-- no equivalent here.
 
 local json = require("@std/json")
 local process = require("@std/process")
@@ -43,17 +43,14 @@ local codemodEdits = require("../lib/codemodEdits")
 local evaluator = require("../lib/evaluator")
 
 type Options = {
-	identifier: string,
-	env: string,
-	value: string,
+	globals: string,
 }
 
--- The global's name and its value as Luau source, set once by `initialize`.
-local identifier = ""
-local replacementText = "nil"
+-- Each global's value as Luau source, keyed by its name, set once by
+-- `initialize`.
+local replacementByName: { [string]: string } = {}
 
-local function parseJsonValue(text: string): string
-	local value: unknown = json.deserialize(text)
+local function formatValue(name: string, value: unknown): string
 	if value == json.null then
 		return "nil"
 	elseif typeof(value) == "boolean" then
@@ -63,24 +60,37 @@ local function parseJsonValue(text: string): string
 	elseif typeof(value) == "string" then
 		return evaluator.quoteString(value)
 	end
-	error(`--value must be JSON null, a boolean, a number, or a string, got {text}`)
+	error(`{name} must be JSON null, a boolean, a number, a string, or an object with "env"`)
 end
 
 local function configure(options: Options)
-	assert(options.identifier ~= "", "--identifier must name a global")
-	identifier = options.identifier
+	local globals: unknown = json.deserialize(options.globals)
+	assert(typeof(globals) == "table", "--globals must be a JSON object mapping names to values")
 
-	local envValue = if options.env ~= "" then process.env[options.env] else nil
-	if envValue then
-		replacementText = evaluator.quoteString(envValue)
-	elseif options.value ~= "" then
-		replacementText = parseJsonValue(options.value)
-	else
-		if options.env ~= "" then
-			print(`warning: environment variable {options.env} isn't set, so {identifier} becomes nil`)
+	replacementByName = {}
+	for name, value in globals :: { [unknown]: unknown } do
+		-- Lute's JSON decoder also tags each object with a key that isn't a
+		-- string, so the type check skips it.
+		if typeof(name) ~= "string" then
+			continue
 		end
-		replacementText = "nil"
+		if typeof(value) == "table" then
+			local spec = value :: { env: unknown, value: unknown }
+			assert(typeof(spec.env) == "string" and spec.env ~= "", `{name}: "env" must name an environment variable`)
+			local envValue = process.env[spec.env]
+			if envValue then
+				replacementByName[name] = evaluator.quoteString(envValue)
+			elseif spec.value ~= nil then
+				replacementByName[name] = formatValue(name, spec.value)
+			else
+				print(`warning: environment variable {spec.env} isn't set, so {name} becomes nil`)
+				replacementByName[name] = "nil"
+			end
+		else
+			replacementByName[name] = formatValue(name, value)
+		end
 	end
+	assert(next(replacementByName) ~= nil, "--globals must name at least one global")
 end
 
 local function initialize(context: transformTypes.InitializationContext<Options>)
@@ -92,28 +102,29 @@ local function isGlobal(expr: syntax.CstExpr, name: string): boolean
 	return global ~= nil and global.name.text == name
 end
 
--- Whether `expr` reads the global, in any of the three forms darklua matches.
-local function readsGlobal(expr: syntax.CstExpr): boolean
-	if isGlobal(expr, identifier) then
-		return true
+-- The name of the configured global `expr` reads, in any of the three forms
+-- darklua matches, or nil when it reads none of them.
+local function readGlobalName(expr: syntax.CstExpr): string?
+	local global = utils.isExprGlobal(expr)
+	if global then
+		return if replacementByName[global.name.text] then global.name.text else nil
 	end
 
+	local name: string? = nil
 	local indexName = utils.isExprIndexName(expr)
-	if indexName then
-		return indexName.accessor.text == "."
-			and indexName.index.text == identifier
-			and isGlobal(indexName.expression, "_G")
+	if indexName and indexName.accessor.text == "." and isGlobal(indexName.expression, "_G") then
+		name = indexName.index.text
 	end
 
 	local indexExpr = utils.isExprIndexExpr(expr)
-	if indexExpr then
+	if indexExpr and isGlobal(indexExpr.expression, "_G") then
 		local key = utils.isExprConstantString(indexExpr.index)
-		return key ~= nil
-			and key.quoteStyle ~= "interp"
-			and key.value.text == identifier
-			and isGlobal(indexExpr.expression, "_G")
+		if key and key.quoteStyle ~= "interp" then
+			name = key.value.text
+		end
 	end
-	return false
+
+	return if name and replacementByName[name] then name else nil
 end
 
 local function positionKey(location: syntax.Span): string
@@ -155,10 +166,10 @@ local function transform(context: transformTypes.Context<Options>): syntaxTypes.
 	query
 		.findAllFromRoot(context.parseresult, utils.isExpr)
 		:filter(function(expr)
-			return not targets[expr] and readsGlobal(expr)
+			return not targets[expr] and readGlobalName(expr) ~= nil
 		end)
 		:forEach(function(expr)
-			local text = replacementText
+			local text = replacementByName[readGlobalName(expr) :: string]
 			if prefixes[expr] then
 				text = `({text})`
 				-- A statement that now opens with `(` could be read as a
@@ -175,17 +186,7 @@ end
 
 local migration: transformTypes.Migration = {
 	options = {
-		{ kind = "string", name = "identifier" },
-		{
-			kind = "string",
-			name = "env",
-			default = "",
-		},
-		{
-			kind = "string",
-			name = "value",
-			default = "",
-		},
+		{ kind = "string", name = "globals" },
 	},
 	initialize = initialize,
 	transform = transform,

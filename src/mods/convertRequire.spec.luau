@@ -167,6 +167,25 @@ test.suite("convertRequire code mod", function(suite)
 		end)
 	end)
 
+	suite:case("leaves the requires listed in ignore alone", function(assert)
+		local source =
+			'local fs = require("@std/fs")\nlocal gen = require("./generated/Icons")\nlocal x = require("./Missing")'
+		local options = { ignore = "@std/*, ./generated/*, ./Missing" }
+		assert.eq(convert(source, "src/Foo.luau", options), source)
+
+		local mixed = 'local fs = require("@std/fs")\nlocal foo = require("../Foo")'
+		assert.eq(
+			convert(mixed, "src/Bar/Baz.luau", { ignore = "@std/*" }),
+			'local fs = require("@std/fs")\nlocal foo = require(script.Parent.Parent.Foo)'
+		)
+	end)
+
+	suite:case("matches an ignore entry without * exactly", function(assert)
+		assert.throws(function()
+			convert('require("@std/fs")', "src/Foo.luau", { ignore = "@std" })
+		end)
+	end)
+
 	suite:case("asks for both copy folders", function(assert)
 		assert.throws(function()
 			convert('require("./Bar")', "src/Foo.luau", { sourceFolder = "src" })

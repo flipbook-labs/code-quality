@@ -13,28 +13,28 @@ The rules come in two folders:
 
 ### Lints
 
-| Rule | What it flags |
-| --- | --- |
-| `bad_string_escape` | An escape that doesn't exist, like `"\q"`, or a quote escaped where it doesn't need to be |
-| `compare_nan` | `x == 0/0`, which is always false; use `x ~= x` |
-| `deprecated` | Deprecated standard library functions and fields, such as `table.getn`; deprecated Roblox APIs on `game`, `plugin`, `script`, `workspace`, and `Enum`, such as `workspace:FindPartOnRay` and `Enum.Axis.Left`; and deprecated parameters, such as the second argument to `Instance.new` |
-| `empty_loop` | A loop with an empty body |
-| `global_usage` | Any use of `_G` that isn't a local |
-| `high_cyclomatic_complexity` | A function with more branches, loops, `and`s, and `or`s than `maximum_complexity` allows |
-| `if_same_then_else` | An `if` branch whose block repeats an earlier branch of the same `if` |
-| `ifs_same_cond` | An `elseif` whose condition repeats an earlier condition of the same `if` |
-| `manual_table_clone` | A loop that copies a fresh table's entries one by one, where `table.clone` does the same |
-| `mixed_table` | A table constructor with both positional and keyed entries |
-| `multiple_statements` | More than one statement on a line |
-| `must_use`   | A standard library call whose return value is discarded, as in a `math.max(x, y)` statement |
-| `restricted_module_paths` | A module path listed in the `restricted_paths` option |
-| `roblox_incorrect_color3_new_bounds` | `Color3.new` with a number outside 0 to 1, as in `Color3.new(255, 0, 0)`; use `Color3.fromRGB` |
-| `roblox_manual_fromscale_or_fromoffset` | A `UDim2.new` that sets only scale or only offset, which `UDim2.fromScale` or `UDim2.fromOffset` says more plainly |
-| `roblox_suspicious_udim2_new` | A `UDim2.new` call with one to three arguments, when it takes four |
-| `shadowing` | A local that redeclares a name already in scope |
-| `suspicious_reverse_loop` | `for i = #t, 1 do`, which needs a step of `-1` to count down |
-| `unbalanced_assignments` | An assignment with more values than names, or fewer values without a trailing call |
-| `unscoped_variables` | An assignment to a name no local declares, which makes a global |
+| Rule                                    | What it flags                                                                                                                                                                                                                                                                           |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bad_string_escape`                     | An escape that doesn't exist, like `"\q"`, or a quote escaped where it doesn't need to be                                                                                                                                                                                               |
+| `compare_nan`                           | `x == 0/0`, which is always false; use `x ~= x`                                                                                                                                                                                                                                         |
+| `deprecated`                            | Deprecated standard library functions and fields, such as `table.getn`; deprecated Roblox APIs on `game`, `plugin`, `script`, `workspace`, and `Enum`, such as `workspace:FindPartOnRay` and `Enum.Axis.Left`; and deprecated parameters, such as the second argument to `Instance.new` |
+| `empty_loop`                            | A loop with an empty body                                                                                                                                                                                                                                                               |
+| `global_usage`                          | Any use of `_G` that isn't a local                                                                                                                                                                                                                                                      |
+| `high_cyclomatic_complexity`            | A function with more branches, loops, `and`s, and `or`s than `maximum_complexity` allows                                                                                                                                                                                                |
+| `if_same_then_else`                     | An `if` branch whose block repeats an earlier branch of the same `if`                                                                                                                                                                                                                   |
+| `ifs_same_cond`                         | An `elseif` whose condition repeats an earlier condition of the same `if`                                                                                                                                                                                                               |
+| `manual_table_clone`                    | A loop that copies a fresh table's entries one by one, where `table.clone` does the same                                                                                                                                                                                                |
+| `mixed_table`                           | A table constructor with both positional and keyed entries                                                                                                                                                                                                                              |
+| `multiple_statements`                   | More than one statement on a line                                                                                                                                                                                                                                                       |
+| `must_use`                              | A standard library call whose return value is discarded, as in a `math.max(x, y)` statement                                                                                                                                                                                             |
+| `restricted_module_paths`               | A module path listed in the `restricted_paths` option                                                                                                                                                                                                                                   |
+| `roblox_incorrect_color3_new_bounds`    | `Color3.new` with a number outside 0 to 1, as in `Color3.new(255, 0, 0)`; use `Color3.fromRGB`                                                                                                                                                                                          |
+| `roblox_manual_fromscale_or_fromoffset` | A `UDim2.new` that sets only scale or only offset, which `UDim2.fromScale` or `UDim2.fromOffset` says more plainly                                                                                                                                                                      |
+| `roblox_suspicious_udim2_new`           | A `UDim2.new` call with one to three arguments, when it takes four                                                                                                                                                                                                                      |
+| `shadowing`                             | A local that redeclares a name already in scope                                                                                                                                                                                                                                         |
+| `suspicious_reverse_loop`               | `for i = #t, 1 do`, which needs a step of `-1` to count down                                                                                                                                                                                                                            |
+| `unbalanced_assignments`                | An assignment with more values than names, or fewer values without a trailing call                                                                                                                                                                                                      |
+| `unscoped_variables`                    | An assignment to a name no local declares, which makes a global                                                                                                                                                                                                                         |
 
 `empty_loop` takes a `comments_count` option. When it's `true`, a loop whose body is only a comment isn't flagged. `multiple_statements` takes a `one_line_if` option: `"break-return-only"` (the default) allows `if x then return end` on one line, `"allow"` allows any one-line `if` with a single statement, and `"deny"` allows none. Set options in `.config.luau`:
 
@@ -72,20 +72,20 @@ These apply to every rule:
 
 These apply to one rule or a group of them:
 
-| Rule | Difference |
-| --- | --- |
-| `bad_string_escape` | A malformed or out-of-range escape, like `"\x1"` or `"\u{110000}"`, is a Luau parse error, so the file fails to lint instead of getting this warning. |
-| `deprecated`, `must_use` | The standard library lists are hand copies of Selene 0.31.0's `lua51`, `luau`, and `roblox_base` definitions, so they change only when someone updates them. Only globals read through `.` or `:`, like `table.getn`, are checked. Instance methods such as `signal:connect` need the receiver's type and aren't checked. |
-| `deprecated` | Roblox APIs follow the API dump as of the last `lute run generate-roblox-api`, not the dump Selene's std was generated from. Messages come from Roblox's creator-docs reference rather than Selene's generic "this property is deprecated." Selene flags only an enum item's legacy names, like `Enum.Axis.Left`. This rule also flags items Roblox tags as deprecated, like `Enum.SortOrder.Custom`, and flags a deprecated enum, like `Enum.Status`, once rather than once per item. |
-| `must_use` | A call on a local, like `math.max(x, y)` after `local math = {}`, isn't flagged. Selene flags it. |
-| `empty_loop` | `comments_count` counts only a comment inside the loop's body. Selene counts one anywhere in the loop, so `while --[[ready?]] ready do end` passed there. |
-| `global_usage` | Only `_G` is flagged. Selene also flags `shared` under its Roblox std. |
-| `if_same_then_else`, `ifs_same_cond` | Two names spelled the same but bound differently, such as a local in one branch and a global in another, compare as different. Selene compares them as the same. |
-| `manual_table_clone` | The table being copied must be `pairs(t)`, `ipairs(t)`, `next, t`, or a plain `t`. Selene also flags a loop over any other call, as in `for k, v in string.gmatch(text, p) do`, and suggests a `table.clone` that would throw. A local named `pairs`, `ipairs`, or `next`, or a loop over a local set from a call, isn't flagged either. |
-| `roblox_incorrect_color3_new_bounds`, `roblox_manual_fromscale_or_fromoffset`, `roblox_suspicious_udim2_new` | Only the globals `Color3` and `UDim2` match. Selene matches the name, so it also flags a local named `Color3`. Argument values are compared as 64-bit floats, not 32-bit, so a value like `1.00000001` that rounds to a bound in 32 bits can disagree. |
-| `roblox_suspicious_udim2_new` | A call whose last argument is an unparenthesized call or `...`, as in `UDim2.new(parts())`, isn't flagged, since that argument can supply the remaining values. Selene flags it. |
-| `suspicious_reverse_loop` | A hexadecimal end value, as in `for i = #t, 0x10 do`, isn't flagged. Selene flags it. |
-| `unscoped_variables` | An assignment to a standard library global with fields, such as `string = ...`, is flagged. Selene skips it. |
+| Rule                                                                                                         | Difference                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bad_string_escape`                                                                                          | A malformed or out-of-range escape, like `"\x1"` or `"\u{110000}"`, is a Luau parse error, so the file fails to lint instead of getting this warning.                                                                                                                                                                                                                                                                                                                                  |
+| `deprecated`, `must_use`                                                                                     | The standard library lists are hand copies of Selene 0.31.0's `lua51`, `luau`, and `roblox_base` definitions, so they change only when someone updates them. Only globals read through `.` or `:`, like `table.getn`, are checked. Instance methods such as `signal:connect` need the receiver's type and aren't checked.                                                                                                                                                              |
+| `deprecated`                                                                                                 | Roblox APIs follow the API dump as of the last `lute run generate-roblox-api`, not the dump Selene's std was generated from. Messages come from Roblox's creator-docs reference rather than Selene's generic "this property is deprecated." Selene flags only an enum item's legacy names, like `Enum.Axis.Left`. This rule also flags items Roblox tags as deprecated, like `Enum.SortOrder.Custom`, and flags a deprecated enum, like `Enum.Status`, once rather than once per item. |
+| `must_use`                                                                                                   | A call on a local, like `math.max(x, y)` after `local math = {}`, isn't flagged. Selene flags it.                                                                                                                                                                                                                                                                                                                                                                                      |
+| `empty_loop`                                                                                                 | `comments_count` counts only a comment inside the loop's body. Selene counts one anywhere in the loop, so `while --[[ready?]] ready do end` passed there.                                                                                                                                                                                                                                                                                                                              |
+| `global_usage`                                                                                               | Only `_G` is flagged. Selene also flags `shared` under its Roblox std.                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `if_same_then_else`, `ifs_same_cond`                                                                         | Two names spelled the same but bound differently, such as a local in one branch and a global in another, compare as different. Selene compares them as the same.                                                                                                                                                                                                                                                                                                                       |
+| `manual_table_clone`                                                                                         | The table being copied must be `pairs(t)`, `ipairs(t)`, `next, t`, or a plain `t`. Selene also flags a loop over any other call, as in `for k, v in string.gmatch(text, p) do`, and suggests a `table.clone` that would throw. A local named `pairs`, `ipairs`, or `next`, or a loop over a local set from a call, isn't flagged either.                                                                                                                                               |
+| `roblox_incorrect_color3_new_bounds`, `roblox_manual_fromscale_or_fromoffset`, `roblox_suspicious_udim2_new` | Only the globals `Color3` and `UDim2` match. Selene matches the name, so it also flags a local named `Color3`. Argument values are compared as 64-bit floats, not 32-bit, so a value like `1.00000001` that rounds to a bound in 32 bits can disagree.                                                                                                                                                                                                                                 |
+| `roblox_suspicious_udim2_new`                                                                                | A call whose last argument is an unparenthesized call or `...`, as in `UDim2.new(parts())`, isn't flagged, since that argument can supply the remaining values. Selene flags it.                                                                                                                                                                                                                                                                                                       |
+| `suspicious_reverse_loop`                                                                                    | A hexadecimal end value, as in `for i = #t, 0x10 do`, isn't flagged. Selene flags it.                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `unscoped_variables`                                                                                         | An assignment to a standard library global with fields, such as `string = ...`, is flagged. Selene skips it.                                                                                                                                                                                                                                                                                                                                                                           |
 
 Some Selene behavior looks like a bug but is kept, so the same code gets the same result:
 
@@ -148,6 +148,7 @@ dev_dependencies = {
 - `LINT_RULES_PATH` is `src/rules/lints`, the Selene replacement.
 - `STYLE_RULES_PATH` is `src/rules/style`, the house style.
 - `RULES_PATH` is `src/rules`, which runs both.
+- `MODS_PATH` is `src/mods`, the code mods below.
 
 ```luau
 local CodeQuality = require("@code-quality")
@@ -194,16 +195,16 @@ A mod keeps the rest of each file as written but doesn't reformat the code it ch
 
 A Roblox build turns the Luau in `src` into code Roblox can run. Darklua does that with a list of rules in `.darklua.json`. Each of these mods replaces one of those rules, so a repo runs only the steps it needs:
 
-| Mod                      | Darklua rule                | Options                                                               |
-| ------------------------ | --------------------------- | --------------------------------------------------------------------- |
-| `convertRequire`         | `convert_require`           | `sourcemap` (default `sourcemap.json`), `sourceFolder`, `buildFolder` |
-| `injectGlobalValue`      | `inject_global_value`       | `identifier` (required), `env`, `value`                               |
-| `computeExpression`      | `compute_expression`        | None                                                                  |
-| `removeUnusedIfBranch`   | `remove_unused_if_branch`   | None                                                                  |
-| `removeUnusedWhile`      | `remove_unused_while`       | None                                                                  |
-| `filterAfterEarlyReturn` | `filter_after_early_return` | None                                                                  |
-| `removeNilDeclaration`   | `remove_nil_declaration`    | None                                                                  |
-| `removeEmptyDo`          | `remove_empty_do`           | None                                                                  |
+| Mod                      | Darklua rule                | Options                                                                         |
+| ------------------------ | --------------------------- | ------------------------------------------------------------------------------- |
+| `convertRequire`         | `convert_require`           | `sourcemap` (default `sourcemap.json`), `sourceFolder`, `buildFolder`, `ignore` |
+| `injectGlobalValue`      | `inject_global_value`       | `globals` (required)                                                            |
+| `computeExpression`      | `compute_expression`        | None                                                                            |
+| `removeUnusedIfBranch`   | `remove_unused_if_branch`   | None                                                                            |
+| `removeUnusedWhile`      | `remove_unused_while`       | None                                                                            |
+| `filterAfterEarlyReturn` | `filter_after_early_return` | None                                                                            |
+| `removeNilDeclaration`   | `remove_nil_declaration`    | None                                                                            |
+| `removeEmptyDo`          | `remove_empty_do`           | None                                                                            |
 
 `lute transform` rewrites files in place, so a build copies `src` into its output folder first and runs one `lute transform` per step on the copy. Pass options after `--`. Run the steps in the order above, which is the order darklua configs list them. `injectGlobalValue` puts in the values the later steps evaluate, and `removeUnusedIfBranch` can leave behind the empty blocks and `do return end` that `filterAfterEarlyReturn` and `removeEmptyDo` clean up.
 
@@ -211,7 +212,7 @@ A Roblox build turns the Luau in `src` into code Roblox can run. Darklua does th
 rm -rf dist && cp -R src dist
 rojo sourcemap build.project.json -o sourcemap.json
 lute transform <package>/src/mods/convertRequire.luau dist -- --sourcemap sourcemap.json --sourceFolder src --buildFolder dist
-lute transform <package>/src/mods/injectGlobalValue.luau dist -- --identifier BUILD_CHANNEL --env BUILD_CHANNEL
+lute transform <package>/src/mods/injectGlobalValue.luau dist -- --globals '{"BUILD_CHANNEL":{"env":"BUILD_CHANNEL"},"__DEV__":false}'
 lute transform <package>/src/mods/computeExpression.luau dist
 lute transform <package>/src/mods/removeUnusedIfBranch.luau dist
 lute transform <package>/src/mods/removeUnusedWhile.luau dist
@@ -220,21 +221,19 @@ lute transform <package>/src/mods/removeNilDeclaration.luau dist
 lute transform <package>/src/mods/removeEmptyDo.luau dist
 ```
 
-`convertRequire` resolves each require the way Luau does on disk, through relative paths, `@self`, and the aliases in the nearest `.config.luau` or `.luaurc`, then looks the file up in the Rojo sourcemap. The sourcemap describes `src`, not the copy, so `--sourceFolder src --buildFolder dist` tells the mod to resolve `dist/Foo.luau` as `src/Foo.luau`. It stops with an error on a require it can't resolve, where darklua logs a warning and leaves the require alone.
+`convertRequire` resolves each require the way Luau does on disk, through relative paths, `@self`, and the aliases in the nearest `.config.luau` or `.luaurc`, then looks the file up in the Rojo sourcemap. The sourcemap describes `src`, not the copy, so `--sourceFolder src --buildFolder dist` tells the mod to resolve `dist/Foo.luau` as `src/Foo.luau`. It stops with an error on a require it can't resolve, where darklua logs a warning and leaves the require alone. For requires that only resolve at runtime, `--ignore` takes a comma-separated list of require strings to leave as they are, and an entry ending in `*` matches every string that starts with it, as in `--ignore "@std/*"`.
 
-`injectGlobalValue` replaces one global per run, so a build with several globals runs it once for each. `--env` names an environment variable whose text becomes a string, and `--value` gives a JSON value such as `true`, `12`, or `"prod"`, used when `--env` isn't given or names a variable that isn't set. With neither, the global becomes `nil`.
+`injectGlobalValue` sets every global in one run. `--globals` is a JSON object that maps each global's name to a value such as `true`, `12`, `"prod"`, or `null` for `nil`. A value written as `{"env": "NAME"}` takes the text of that environment variable, and a `"value"` beside it is used when the variable isn't set.
 
-A Lute build script can find the mods next to the rule folders the package exports:
+A Lute build script finds the mods through the package's `MODS_PATH` export:
 
 ```luau
 local CodeQuality = require("@code-quality")
 local path = require("@std/path")
 local process = require("@std/process")
 
-local MODS_PATH = path.join(CodeQuality.RULES_PATH, "..", "mods")
-
 local function transform(mod: string, options: { string })
-	local command = { "lute", "transform", path.format(path.join(MODS_PATH, `{mod}.luau`)), "dist", "--" }
+	local command = { "lute", "transform", path.format(path.join(CodeQuality.MODS_PATH, `{mod}.luau`)), "dist", "--" }
 	table.move(options, 1, #options, #command + 1, command)
 	local result = process.run(command, { stdio = "inherit" })
 	assert(result.ok, `{mod} failed`)
@@ -249,7 +248,7 @@ The output means the same as darklua's, but it isn't the same text. Darklua repr
 - Folded numbers are written the way `tostring` writes them, so darklua's `12E4` is `120000` here.
 - `removeUnusedIfBranch` moves the block of an `if` that always runs into the enclosing block, where darklua always wraps it in `do ... end`. It still wraps a block that declares locals or types, or ends in `return`, `break`, or `continue`.
 - When a removed statement or a moved block would leave a statement that opens with `(` right after another one, the mods keep them apart with `;` or `do ... end`. Luau would otherwise read the `(` as a call on the line before.
-- A plain copy keeps every file in `src`. Darklua writes only Luau files and turns JSON, TOML, and YAML files into Luau modules, so prune anything the build shouldn't ship.
+- A plain copy keeps every file in `src`. Darklua writes only Luau files and turns JSON, TOML, and YAML files into Luau modules, so prune anything the build shouldn't ship. No mod converts those files, since Rojo already syncs a plain `.json` file as a ModuleScript.
 
 ## Development
 

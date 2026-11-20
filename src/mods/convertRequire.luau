@@ -12,7 +12,7 @@
 -- becomes, and the require walks from the requiring file's instance to that
 -- one.
 --
--- It takes three options:
+-- It takes four options:
 --
 -- - `sourcemap`, the path to a sourcemap from `rojo sourcemap`. It defaults to
 --   `sourcemap.json`. As in darklua, the file paths inside it are relative to
@@ -22,6 +22,10 @@
 --   the file at the same place under `sourceFolder`, which is what the
 --   sourcemap and the alias configs describe. Leave both out to resolve
 --   files where they are.
+-- - `ignore`, a comma-separated list of require strings to leave as they
+--   are, for requires that only resolve at runtime. An entry ending in `*`
+--   matches every require string that starts with the text before it, so
+--   `@std/*,./generated/*` skips Lute's standard library and one folder.
 --
 -- Relative option paths start from the folder `lute transform` runs in. For
 -- example, after copying `src` to `dist`:
@@ -32,7 +36,7 @@
 --
 -- Darklua logs a warning and leaves a require alone when it can't resolve it.
 -- This mod stops with an error instead, so a build can't ship a require that
--- won't load. A child whose name isn't a valid identifier is indexed with
+-- won't load. List the requires a build expects to leave alone in `ignore`. A child whose name isn't a valid identifier is indexed with
 -- `["name"]`, where darklua writes `['name']`.
 --
 -- Run it with `lute transform <package>/src/mods/convertRequire.luau <files>`.
@@ -54,6 +58,7 @@ type Options = {
 	sourcemap: string,
 	sourceFolder: string,
 	buildFolder: string,
+	ignore: string,
 }
 
 export type SourcemapNode = {
@@ -77,6 +82,24 @@ local instanceByFolder: { [string]: { string } } = {}
 local aliasesByFolder: { [string]: { [string]: string } } = {}
 local sourceFolder = ""
 local buildFolder = ""
+
+-- The `ignore` entries. An exact entry matches one require string, and a
+-- prefix entry, written with a trailing `*`, matches every string starting
+-- with it.
+local ignoredExact: { [string]: true } = {}
+local ignoredPrefixes: { string } = {}
+
+local function isIgnored(requirePath: string): boolean
+	if ignoredExact[requirePath] then
+		return true
+	end
+	for _, prefix in ignoredPrefixes do
+		if requirePath:sub(1, #prefix) == prefix then
+			return true
+		end
+	end
+	return false
+end
 
 local function normalize(filePath: string): string
 	local unified = filePath:gsub("\\", "/")
@@ -251,6 +274,20 @@ local function configure(options: Options)
 	assert(fs.exists(sourcemapPath), `no sourcemap at {sourcemapPath}; generate one with \`rojo sourcemap\``)
 	local sourcemap: unknown = json.deserialize(fs.readFileToString(sourcemapPath))
 
+	ignoredExact = {}
+	ignoredPrefixes = {}
+	for _, rawEntry in options.ignore:split(",") do
+		local entry = rawEntry:gsub("^%s+", ""):gsub("%s+$", "")
+		if entry == "" then
+			continue
+		end
+		if entry:sub(-1) == "*" then
+			table.insert(ignoredPrefixes, entry:sub(1, -2))
+		else
+			ignoredExact[entry] = true
+		end
+	end
+
 	moduleByFile = {}
 	instanceByFolder = {}
 	aliasesByFolder = {}
@@ -280,7 +317,10 @@ local function transform(context: transformTypes.Context<Options>): syntaxTypes.
 			-- Luau only resolves a plain string literal, so a backtick
 			-- string, even one without `{}` in it, stays as it is.
 			local argument = utils.isExprConstantString(call.arguments[1])
-			return #call.arguments == 1 and argument ~= nil and argument.quoteStyle ~= "interp"
+			return #call.arguments == 1
+				and argument ~= nil
+				and argument.quoteStyle ~= "interp"
+				and not isIgnored(argument.value.text)
 		end)
 		:replace(function(call)
 			assert(requirerInstance, `{requirer} isn't in the sourcemap, so its requires can't be resolved`)
@@ -307,6 +347,11 @@ local migration: transformTypes.Migration = {
 		{
 			kind = "string",
 			name = "buildFolder",
+			default = "",
+		},
+		{
+			kind = "string",
+			name = "ignore",
 			default = "",
 		},
 	},
