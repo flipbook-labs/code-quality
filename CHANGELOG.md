@@ -3,6 +3,15 @@
 All notable changes to this project will be documented in this file.
 
 
+## v0.6.0
+
+Features 1
+
+### Features
+
+1. <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/flipbook-labs/code-quality/main/.changes/assets/kind-mods-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/flipbook-labs/code-quality/main/.changes/assets/kind-mods-light.svg"><img src="https://raw.githubusercontent.com/flipbook-labs/code-quality/main/.changes/assets/kind-mods-light.png" alt="Code mods" height="18" align="texttop"></picture> `convertRequire` resolves Wally link modules like react-charm's `./Charm`. ([#46](https://github.com/flipbook-labs/code-quality/pull/46))
+
+
 ## v0.5.0
 
 Highlights: Code mods that replace darklua.
