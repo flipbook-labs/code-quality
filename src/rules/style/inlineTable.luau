@@ -75,21 +75,16 @@ local function lint(cst: syntax.CstStatBlock, sourcepath: path.Path?): { types.L
 		if not isInline(tbl.location) then
 			return
 		end
-		local location = getReportLocation(cst, tbl.location)
+		local message: string? = nil
 		if returned[tbl] and #tbl.entries > MAX_INLINE_RETURNED_ENTRIES then
-			table.insert(
-				violations,
-				createViolation(location, "Put each entry of a returned table on its own line.", sourcepath)
-			)
+			message = "Put each entry of a returned table on its own line."
 		elseif #tbl.entries > MAX_INLINE_ENTRIES then
-			table.insert(
-				violations,
-				createViolation(
-					location,
-					"Put each entry on its own line when a table has more than three entries.",
-					sourcepath
-				)
-			)
+			message = "Put each entry on its own line when a table has more than three entries."
+		end
+		-- `getReportLocation` searches the whole file, so it only runs for a
+		-- table that gets reported.
+		if message then
+			table.insert(violations, createViolation(getReportLocation(cst, tbl.location), message, sourcepath))
 		end
 	end)
 
