@@ -3,6 +3,34 @@
 All notable changes to this project will be documented in this file.
 
 
+## v0.5.0
+
+Highlights: Code mods that replace darklua.
+
+Features 1 · Changes 1 · Internal 1
+
+### Highlights
+
+> <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/flipbook-labs/code-quality/main/.changes/assets/kind-mods-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/flipbook-labs/code-quality/main/.changes/assets/kind-mods-light.svg"><img src="https://raw.githubusercontent.com/flipbook-labs/code-quality/main/.changes/assets/kind-mods-light.png" alt="Code mods" height="18" align="texttop"></picture> **Code mods that replace darklua**
+>
+> Add code mods for each darklua rule our builds use, so a Roblox build can run on `lute transform` instead. ([#41](https://github.com/flipbook-labs/code-quality/pull/41))
+
+### Features
+
+1. <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/flipbook-labs/code-quality/main/.changes/assets/kind-mods-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/flipbook-labs/code-quality/main/.changes/assets/kind-mods-light.svg"><img src="https://raw.githubusercontent.com/flipbook-labs/code-quality/main/.changes/assets/kind-mods-light.png" alt="Code mods" height="18" align="texttop"></picture> Code mods that replace darklua ([#41](https://github.com/flipbook-labs/code-quality/pull/41))
+
+### Changes
+
+1. <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/flipbook-labs/code-quality/main/.changes/assets/kind-rules-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/flipbook-labs/code-quality/main/.changes/assets/kind-rules-light.svg"><img src="https://raw.githubusercontent.com/flipbook-labs/code-quality/main/.changes/assets/kind-rules-light.png" alt="Lint rules" height="18" align="texttop"></picture> `inline_table` now flags tables and table types with more than three entries of any kind, so expect new findings. ([#42](https://github.com/flipbook-labs/code-quality/pull/42))
+
+<details>
+<summary>Internal (1)</summary>
+
+1. <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/flipbook-labs/code-quality/main/.changes/assets/kind-mods-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/flipbook-labs/code-quality/main/.changes/assets/kind-mods-light.svg"><img src="https://raw.githubusercontent.com/flipbook-labs/code-quality/main/.changes/assets/kind-mods-light.png" alt="Code mods" height="18" align="texttop"></picture> Expand the long tables in the code mods so this repo passes its own `inline_table` rule. ([#44](https://github.com/flipbook-labs/code-quality/pull/44))
+
+</details>
+
+
 ## v0.4.0
 
 Features 6 · Changes 1 · Internal 1
