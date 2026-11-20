@@ -40,6 +40,19 @@ test.suite("lute lint", function(suite)
 		assert.strContains(output, "warning[no_error_field]")
 		assert.strNotContains(output, "attempt to index nil")
 	end)
+	suite:case("reports an inline table type nested in another", function(assert)
+		local output =
+			runLint("style/inlineTable", "type T = {\n\tinner: { a: number, b: number, c: number, d: number },\n}")
+		assert.strContains(output, "warning[inline_table]")
+		assert.strNotContains(output, "attempt to index nil")
+	end)
+
+	suite:case("reports a table constructor inside a table type", function(assert)
+		local output = runLint("style/inlineTable", "type T = { values: typeof({ 1, 2, 3, 4 }) }")
+		assert.strContains(output, "warning[inline_table]")
+		assert.strNotContains(output, "attempt to index nil")
+	end)
+
 	suite:case("reports a restricted module path inside a table type", function(assert)
 		-- The rule flags nothing without configuration, so this writes a
 		-- config file that restricts `game.Foo.Bar`.

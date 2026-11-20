@@ -12,8 +12,21 @@ local function run(command: { string })
 	end
 end
 
-run({ "stylua", "--check", ".lute", "src" })
+run({
+	"stylua",
+	"--check",
+	".lute",
+	"src",
+})
 run({ "selene", ".lute", "src" })
 -- Lute's parallel linting can crash at random, which fails lint for no reason,
 -- so files are linted one at a time (#27).
-run({ "lute", "lint", "--sequential", "--rules", "src/rules", ".lute", "src" })
+run({
+	"lute",
+	"lint",
+	"--sequential",
+	"--rules",
+	"src/rules",
+	".lute",
+	"src",
+})

@@ -106,7 +106,7 @@ These Selene lints have no rule here:
 | `annotate_nil_local`        | An annotation on locals that start as `nil`                                                            |
 | `explicit_instantiation`    | `useState<<string?>>(nil)` instead of casting a literal argument, as in `useState(nil :: string?)`     |
 | `function_type_param_names` | Named parameters in function types: `(storyModule: ModuleScript) -> ()`                                |
-| `inline_table`              | One field per line once a table has more than two keyed fields, or any keyed field in a returned table |
+| `inline_table`              | One entry per line once a table or table type has more than three entries, or any returned table       |
 | `no_alias_local`            | Reading `props.foo` where it's used instead of copying it into `local foo`                             |
 | `no_any`                    | `unknown` instead of `any`                                                                             |
 | `no_error_field`            | Error fields named `err` or `problem`, not `error`                                                     |
