@@ -9,6 +9,8 @@ local CodeQuality = {
 	LINT_RULES_PATH = path.format(path.join(rulesPath, "lints")),
 	-- The house-style rules.
 	STYLE_RULES_PATH = path.format(path.join(rulesPath, "style")),
+	-- The code mods, which `lute transform` runs.
+	MODS_PATH = path.format(path.join(path.dirname(rulesPath), "mods")),
 }
 
 return table.freeze(CodeQuality)
