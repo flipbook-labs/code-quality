@@ -186,14 +186,13 @@ local function findOperandContexts(parseresult: syntax.CstParseResult): OperandC
 	query.findAllFromRoot(parseresult, utils.isExpr):forEach(function(expr)
 		if expr.tag == "binary" then
 			checkMinus(expr.operator, expr.rhsOperand)
-			local operator = expr.operator.text
 			if
-				operator == ".."
+				expr.operator.text == ".."
 				and #expr.operator.leadingTrivia == 0
 				and #trivia.rightmostTrivia(expr.lhsOperand) == 0
 			then
 				contexts.beforeConcat[positionKey(expr.lhsOperand.location)] = true
-			elseif operator == "^" then
+			elseif expr.operator.text == "^" then
 				contexts.powerBase[positionKey(expr.lhsOperand.location)] = true
 			end
 		elseif expr.tag == "unary" then
