@@ -67,20 +67,25 @@ local function lint(cst: syntax.CstStatBlock, sourcepath: path.Path?): { types.L
 	local violations: { types.LintViolation } = {}
 	local returned = collectReturnedTables(cst)
 
+	-- Lute crashes on a report whose location lies inside a table type
+	-- (flipbook-labs/code-quality#14), which a constructor can, as in
+	-- `typeof({ 1, 2, 3, 4 })`. `getReportLocation` widens such a report to
+	-- the outermost table type and leaves the rest unchanged.
 	query.findAllFromRoot(cst, utils.isExprTable):forEach(function(tbl)
 		if not isInline(tbl.location) then
 			return
 		end
+		local location = getReportLocation(cst, tbl.location)
 		if returned[tbl] and #tbl.entries > MAX_INLINE_RETURNED_ENTRIES then
 			table.insert(
 				violations,
-				createViolation(tbl.location, "Put each entry of a returned table on its own line.", sourcepath)
+				createViolation(location, "Put each entry of a returned table on its own line.", sourcepath)
 			)
 		elseif #tbl.entries > MAX_INLINE_ENTRIES then
 			table.insert(
 				violations,
 				createViolation(
-					tbl.location,
+					location,
 					"Put each entry on its own line when a table has more than three entries.",
 					sourcepath
 				)
@@ -88,10 +93,7 @@ local function lint(cst: syntax.CstStatBlock, sourcepath: path.Path?): { types.L
 		end
 	end)
 
-	-- A table type nested in another can't be reported at its own location,
-	-- because Lute crashes on a report whose location lies inside a table type
-	-- (flipbook-labs/code-quality#14). `getReportLocation` widens such a report
-	-- to the outermost table type and leaves the rest unchanged.
+	-- A table type nested in another is widened the same way.
 	query.findAllFromRoot(cst, utils.isTypeTable):forEach(function(tableType)
 		if isInline(tableType.location) and #tableType.entries > MAX_INLINE_ENTRIES then
 			table.insert(
