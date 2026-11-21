@@ -3,7 +3,7 @@
 
 local process = require("@std/process")
 
-local CodeQuality = require("@repo/src")
+local CodeQuality = require("@repo/workspace/code-quality/src")
 
 local function run(command: { string })
 	local result = process.run(command, {
@@ -18,7 +18,7 @@ run({
 	"stylua",
 	"--check",
 	".lute",
-	"src",
+	"workspace",
 })
-run({ "selene", ".lute", "src" })
-CodeQuality.lint({ ".lute", "src" })
+run({ "selene", ".lute", "workspace" })
+CodeQuality.lint({ ".lute", "workspace" })

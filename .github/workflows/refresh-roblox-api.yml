@@ -1,8 +1,8 @@
 name: Refresh Roblox API
 
 # The `deprecated` lint checks Roblox APIs against
-# src/generated/robloxApiData.luau, which is generated from the API dump of the
-# latest Studio build. Roblox ships Studio about once a week, so this
+# workspace/code-quality/src/generated/robloxApiData.luau, which is generated
+# from the API dump of the latest Studio build. Roblox ships Studio about once a week, so this
 # regenerates the file every day and opens a PR, or updates the open one, when
 # its deprecations or messages change.
 
@@ -15,7 +15,7 @@ on:
 
 env:
   BRANCH: roblox-api-refresh
-  DATA_PATH: src/generated/robloxApiData.luau
+  DATA_PATH: workspace/code-quality/src/generated/robloxApiData.luau
   ENTRY_PATH: .changes/roblox-api-refresh.md
 
 jobs:
