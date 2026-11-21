@@ -8,14 +8,16 @@ local process = require("@std/process")
 local system = require("@std/system")
 local test = require("@std/test")
 
--- `rulePath` is relative to `src/rules`, as in `style/noAny`.
+local rulesPath = require("../rulesPath")
+
+-- `rulePath` is relative to the package's rules folder, as in `style/noAny`.
 local function runLint(rulePath: string, source: string): string
 	local result = process.run({
 		"lute",
 		"lint",
 		"--no-default-lints",
 		"--rules",
-		`src/rules/{rulePath}.luau`,
+		path.format(path.join(rulesPath, `{rulePath}.luau`)),
 		"--string-input",
 		source,
 	})
@@ -71,7 +73,7 @@ test.suite("lute lint", function(suite)
 			"--config",
 			path.format(configPath),
 			"--rules",
-			"src/rules/lints/restrictedModulePaths.luau",
+			path.format(path.join(rulesPath, "lints", "restrictedModulePaths.luau")),
 			"--string-input",
 			"type T = { f: typeof(game.Foo.Bar) }",
 		})

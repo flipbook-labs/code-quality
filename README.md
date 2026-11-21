@@ -131,17 +131,20 @@ Explicit instantiation needs StyLua's `syntax = "Luau"` setting. Without it, Sty
 
 ## Using the rules
 
-Point `lute lint` at a rule folder of the installed package. Declare the package as a dev dependency in `pkg.luau`, under the `code-quality` key:
+Point `lute lint` at a rule folder of the installed package. Declare the package as a dev dependency in `pkg.luau`, under the `code-quality` key. The package lives in the repository's `workspace/code-quality` folder, so `target` points there:
 
 ```luau
 dev_dependencies = {
 	["code-quality"] = {
-		rev = "v0.3.0",
+		rev = "v0.7.0",
 		sourceKind = "github",
 		source = "https://github.com/flipbook-labs/code-quality",
+		target = "workspace/code-quality",
 	},
 },
 ```
+
+Releases before v0.7.0 keep the package at the repository root, so leave `target` out when pinning one of them.
 
 `lute run install` adds a `code-quality` alias to `.config.luau` that points at the installed package. The package exports each rule folder's absolute path, so a Lute script requires it by that alias and doesn't need to know where Loom installed it:
 
@@ -260,6 +263,8 @@ lute setup
 ```
 
 Every pull request adds a change entry in `.changes/`, which [Changewrite](https://github.com/flipbook-labs/changewrite) turns into the changelog and the next version. [`.changes/README.md`](.changes/README.md) explains the format.
+
+The repository is a Lute package workspace. The root `pkg.luau` has no name or version, which makes it a virtual package, and lists each package under `workspace/` as a member. The CodeQuality package is the `workspace/code-quality` member, and the paths below are relative to that folder. The Lute scripts in `.lute/` stay at the root and work across every member.
 
 Run the checks:
 

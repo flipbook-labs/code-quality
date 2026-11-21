@@ -16,9 +16,9 @@ run({
 	"stylua",
 	"--check",
 	".lute",
-	"src",
+	"workspace",
 })
-run({ "selene", ".lute", "src" })
+run({ "selene", ".lute", "workspace" })
 -- Lute's parallel linting can crash at random, which fails lint for no reason,
 -- so files are linted one at a time (#27).
 run({
@@ -26,7 +26,7 @@ run({
 	"lint",
 	"--sequential",
 	"--rules",
-	"src/rules",
+	"workspace/code-quality/src/rules",
 	".lute",
-	"src",
+	"workspace",
 })

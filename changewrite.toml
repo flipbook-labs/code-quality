@@ -4,7 +4,7 @@ collapsed = ["Internal"]
 [version]
 current = "0.6.0"
 mirror = [
-  { file = "pkg.luau" },
+  { file = "workspace/code-quality/pkg.luau" },
 ]
 
 [kind]
