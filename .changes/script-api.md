@@ -4,4 +4,4 @@ category: Features
 kind: packaging
 ---
 
-Add `transform`, `build`, and `lint` for running CodeQuality from a Lute script.
+Add `Mod`, `Rule`, `transform`, `build`, and `lint` for using CodeQuality from a Lute script.
