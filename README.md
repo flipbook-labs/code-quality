@@ -123,6 +123,8 @@ Casting a table to `{ unknown }` or `{ any }`, as React dependency arrays often 
 
 Every rule reports at warning severity. To silence one on a statement, put `-- lute-lint-ignore(<rule>)` on the line above it. `no_any`, `redundant_path_conversion`, and `tostring_in_interpolation` come with fixes that `lute lint --auto-fix` applies.
 
+A Lute script can name a rule with `CodeQuality.Rule`, such as `CodeQuality.Rule.NoAny` for `no_any`.
+
 `explicit_instantiation` also flags a cast on the result of a call whose only argument is a table constructor. It asks for `table.freeze<<Metrics>>({ ... })` instead of `table.freeze({ ... }) :: Metrics`.
 
 `redundant_path_conversion` checks the paths passed to `@std/fs` and `@std/path` functions, matched through whatever local `require` binds them to. It flags `path.format` around any value, but `tostring` only around a value the source shows is a `Path`: an `@std/path` call that returns one, a local or parameter annotated `path.Path` (or a bare `Path` when the file declares `type Path = path.Path`), or a local set from such a call and never reassigned. A `tostring` around anything else, like `fs.exists(tostring(123))`, may be needed, so it's left alone. The `cwd` option of `process.run` only accepts a string, so it's left alone too.
@@ -150,15 +152,20 @@ dev_dependencies = {
 - `RULES_PATH` is `src/rules`, which runs both.
 - `MODS_PATH` is `src/mods`, the code mods below.
 
+`CodeQuality.lint` runs `lute lint` with the rules over a list of files and folders, prints each finding, and returns how many there were:
+
 ```luau
 local CodeQuality = require("@code-quality")
-local process = require("@std/process")
 
--- Only the Selene replacement. Use RULES_PATH to run the house style too.
-process.run({ "lute", "lint", "--sequential", "--rules", CodeQuality.LINT_RULES_PATH, "src" })
+CodeQuality.lint({ "src", ".lute" })
+
+-- Only the Selene replacement, with findings printed as warnings.
+CodeQuality.lint({ "src" }, { rules = CodeQuality.LINT_RULES_PATH, blocking = false })
 ```
 
-`--sequential` works around a crash in Lute's parallel linting (#27). `lute lint` keeps only the last `--rules` it's given, so passing the flag once per folder runs just the last one. Lute's built-in rules run alongside these unless you pass `--no-default-lints`.
+It errors on any finding unless `blocking` is `false`. It always errors when `lute lint` itself fails, as when a rule throws: `lute lint` prints that error but still exits cleanly, so `lint` reads the findings from a JSON report and treats any other output as a failure. It lints one file at a time to avoid a crash in Lute's parallel linting (#27). Lute's built-in rules run alongside these.
+
+To call `lute lint` yourself, pass one folder to `--rules`. It keeps only the last `--rules` it's given, so passing the flag once per folder runs just the last one.
 
 ## Code mods
 
@@ -182,7 +189,15 @@ All but `stringMethodCall` replace a step of a [darklua](https://github.com/seao
 
 ## Running a code mod
 
-Pass `lute transform` the mod and the files or folders to rewrite. `<package>` is the installed package's folder, the one the `code-quality` alias points to in `.config.luau`. Preview the changes with `--dry-run` first:
+From a Lute script, `CodeQuality.transform` runs one mod over a list of files and folders. `CodeQuality.Mod` names each mod, and the options table becomes the mod's `--name value` arguments:
+
+```luau
+local CodeQuality = require("@code-quality")
+
+CodeQuality.transform(CodeQuality.Mod.StringMethodCall, { "src" })
+```
+
+From a terminal, pass `lute transform` the mod and the files or folders to rewrite. `<package>` is the installed package's folder, the one the `code-quality` alias points to in `.config.luau`. Preview the changes with `--dry-run` first:
 
 ```sh
 lute transform <package>/src/mods/stringMethodCall.luau --dry-run src
@@ -225,23 +240,24 @@ lute transform <package>/src/mods/removeEmptyDo.luau dist
 
 `injectGlobalValue` sets every global in one run. `--globals` is a JSON object that maps each global's name to a value such as `true`, `12`, `"prod"`, or `null` for `nil`. A value written as `{"env": "NAME"}` takes the text of that environment variable, and a `"value"` beside it is used when the variable isn't set.
 
-A Lute build script finds the mods through the package's `MODS_PATH` export:
+From a Lute script, `CodeQuality.build` runs every step above in order. It runs `injectGlobalValue` only when `globals` is given, and takes the same shape as `--globals`:
 
 ```luau
 local CodeQuality = require("@code-quality")
-local path = require("@std/path")
-local process = require("@std/process")
 
-local function transform(mod: string, options: { string })
-	local command = { "lute", "transform", path.format(path.join(CodeQuality.MODS_PATH, `{mod}.luau`)), "dist", "--" }
-	table.move(options, 1, #options, #command + 1, command)
-	local result = process.run(command, { stdio = "inherit" })
-	assert(result.ok, `{mod} failed`)
-end
-
-transform("convertRequire", { "--sourcemap", "sourcemap.json", "--sourceFolder", "src", "--buildFolder", "dist" })
-transform("computeExpression", {})
+-- Copy src to dist and write sourcemap.json first, as above.
+CodeQuality.build({
+	sourceFolder = "src",
+	buildFolder = "dist",
+	sourcemap = "sourcemap.json",
+	globals = {
+		BUILD_CHANNEL = { env = "BUILD_CHANNEL" },
+		__DEV__ = false,
+	},
+})
 ```
+
+`paths` limits the steps to some of the files and folders in `buildFolder`, and `ignore` takes the list `--ignore` does.
 
 The output means the same as darklua's, but it isn't the same text. Darklua reprints every file, and these mods keep each file as written apart from what they change. A few choices also differ, and each mod's doc comment lists them:
 
