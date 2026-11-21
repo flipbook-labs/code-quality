@@ -3,6 +3,15 @@
 All notable changes to this project will be documented in this file.
 
 
+## v0.7.0
+
+Features 1
+
+### Features
+
+1. <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/flipbook-labs/code-quality/main/.changes/assets/kind-packaging-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/flipbook-labs/code-quality/main/.changes/assets/kind-packaging-light.svg"><img src="https://raw.githubusercontent.com/flipbook-labs/code-quality/main/.changes/assets/kind-packaging-light.png" alt="Packaging" height="18" align="texttop"></picture> Add `Mod`, `Rule`, `transform`, `build`, and `lint` for using CodeQuality from a Lute script. ([#51](https://github.com/flipbook-labs/code-quality/pull/51))
+
+
 ## v0.6.0
 
 Features 1
