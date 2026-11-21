@@ -16,7 +16,8 @@ export type Options = {
 	sourcemap: string?,
 	-- Build globals for `injectGlobalValue`, in the shape its `--globals`
 	-- option takes. Write `json.null` for a global that should become `nil`,
-	-- since a `nil` value drops the key. The step is skipped when this is nil.
+	-- since a `nil` value drops the key. The step is skipped when this is nil
+	-- or empty.
 	globals: { [string]: json.Value }?,
 	-- Require strings for `convertRequire` to leave alone. An entry ending in
 	-- `*` matches every string that starts with it.
@@ -53,7 +54,7 @@ local function build(options: Options)
 	end
 	transform(Mod.ConvertRequire, paths, convertOptions)
 
-	if options.globals then
+	if options.globals and next(options.globals) ~= nil then
 		transform(Mod.InjectGlobalValue, paths, {
 			globals = json.serialize(options.globals),
 		})

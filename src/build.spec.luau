@@ -100,4 +100,18 @@ test.suite("transform and build", function(suite)
 
 		assert.eq(readFile("dist/init.luau"), "local Foo = require(script.Foo)\nreturn Foo\n")
 	end)
+
+	suite:case("build skips injectGlobalValue when globals is empty", function(assert)
+		writeFile("src/init.luau", "return _G.BUILD_CHANNEL\n")
+		writeFile("dist/init.luau", "return _G.BUILD_CHANNEL\n")
+
+		build({
+			sourceFolder = at("src"),
+			buildFolder = at("dist"),
+			sourcemap = at("sourcemap.json"),
+			globals = {},
+		})
+
+		assert.eq(readFile("dist/init.luau"), "return _G.BUILD_CHANNEL\n")
+	end)
 end)

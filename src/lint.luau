@@ -39,13 +39,18 @@ type LintReport = {
 -- report instead of the terminal, and anything `lute lint` still prints means
 -- it failed, which errors here whether or not `blocking` is on. Files are
 -- linted one at a time because Lute's parallel linting can crash at random
--- (#27). The report's name includes this process's id, so lint runs that
--- happen at the same time can't overwrite each other's report.
+-- (#27). The report's name includes this process's id and a count of the
+-- calls in it, so lint runs that happen at the same time can't overwrite each
+-- other's report.
+local callCount = 0
+
 local function lint(paths: { string }, options: Options?): number
 	local rules = if options and options.rules then options.rules else rulesPath
 	local blocking = if options and options.blocking ~= nil then options.blocking else true
 
-	local reportPath = path.format(path.join(system.tmpdir(), `code-quality-lint-{process.pid()}.json`))
+	callCount += 1
+	local reportName = `code-quality-lint-{process.pid()}-{callCount}.json`
+	local reportPath = path.format(path.join(system.tmpdir(), reportName))
 	local command = {
 		path.format(process.execPath()),
 		"lint",
