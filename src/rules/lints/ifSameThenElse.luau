@@ -24,10 +24,12 @@ local function hasStatements(block: syntax.CstStatBlock): boolean
 	return count > 0
 end
 
--- Flags a branch of an `if` whose block repeats an earlier branch of the same
--- `if`, as Selene does. Empty blocks are skipped, and a repeat is compared
--- only against the blocks that were kept, so three identical branches report
--- the second and the third against the first.
+--[[
+	Flags a branch of an `if` whose block repeats an earlier branch of the same
+	`if`, as Selene does. Empty blocks are skipped, and a repeat is compared
+	only against the blocks that were kept, so three identical branches report
+	the second and the third against the first.
+]]
 local function lintIf(stat: syntax.CstStatIf, sourcepath: path.Path?, cst: syntax.CstStatBlock): { types.LintViolation }
 	local violations: { types.LintViolation } = {}
 

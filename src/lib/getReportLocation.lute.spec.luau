@@ -53,6 +53,15 @@ test.suite("lute lint", function(suite)
 		assert.strNotContains(output, "attempt to index nil")
 	end)
 
+	suite:case("reports a long comment inside a table type", function(assert)
+		local output = runLint(
+			"style/preferBlockComment",
+			"type T = {\n\t-- one\n\t-- two\n\t-- three\n\t-- four\n\tfield: string,\n}"
+		)
+		assert.strContains(output, "warning[prefer_block_comment]")
+		assert.strNotContains(output, "attempt to index nil")
+	end)
+
 	suite:case("reports a restricted module path inside a table type", function(assert)
 		-- The rule flags nothing without configuration, so this writes a
 		-- config file that restricts `game.Foo.Bar`.

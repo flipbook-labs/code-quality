@@ -7,11 +7,13 @@ local test = require("@std/test")
 
 local rulesPath = require("./rulesPath")
 
--- A repo requires the package by name, through a `.luaurc` alias, from its own
--- folder. This spec does the same in a separate Lute process, so it covers the
--- root `init.luau` and the export as well as the path itself. The process runs
--- the same Lute executable as the spec, since a Rokit-managed `lute` command
--- can't pick a version in a folder without a rokit.toml.
+--[[
+	A repo requires the package by name, through a `.luaurc` alias, from its own
+	folder. This spec does the same in a separate Lute process, so it covers the
+	root `init.luau` and the export as well as the path itself. The process runs
+	the same Lute executable as the spec, since a Rokit-managed `lute` command
+	can't pick a version in a folder without a rokit.toml.
+]]
 test.suite("public API", function(suite)
 	suite:case("the rule and mod folder paths are right when required through an alias", function(assert)
 		local packageRoot = path.dirname(path.dirname(rulesPath))

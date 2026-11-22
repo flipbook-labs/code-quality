@@ -14,20 +14,24 @@ export type Options = {
 	paths: { string }?,
 	-- A sourcemap from `rojo sourcemap`. Defaults to `sourcemap.json`.
 	sourcemap: string?,
-	-- Build globals for `injectGlobalValue`, in the shape its `--globals`
-	-- option takes. Write `json.null` for a global that should become `nil`,
-	-- since a `nil` value drops the key. The step is skipped when this is nil
-	-- or empty.
+	--[[
+		Build globals for `injectGlobalValue`, in the shape its `--globals`
+		option takes. Write `json.null` for a global that should become `nil`,
+		since a `nil` value drops the key. The step is skipped when this is nil
+		or empty.
+	]]
 	globals: { [string]: json.Value }?,
 	-- Require strings for `convertRequire` to leave alone. An entry ending in
 	-- `*` matches every string that starts with it.
 	ignore: { string }?,
 }
 
--- These fold constant expressions, such as the values `injectGlobalValue`
--- puts in, and remove the code that can never run. Each one cleans up what
--- the ones before it leave, such as an empty `do ... end` from
--- `removeUnusedIfBranch`.
+--[[
+	These fold constant expressions, such as the values `injectGlobalValue`
+	puts in, and remove the code that can never run. Each one cleans up what
+	the ones before it leave, such as an empty `do ... end` from
+	`removeUnusedIfBranch`.
+]]
 local CLEANUP_MODS: { Mod.Mod } = {
 	Mod.ComputeExpression,
 	Mod.RemoveUnusedIfBranch,
@@ -37,10 +41,12 @@ local CLEANUP_MODS: { Mod.Mod } = {
 	Mod.RemoveEmptyDo,
 }
 
--- Turns a build's copy of Luau source into code Roblox can run: it converts
--- string requires, injects the globals, and then runs the cleanup mods. The
--- mods rewrite files in place, so the caller copies its source into
--- `buildFolder` before calling this.
+--[[
+	Turns a build's copy of Luau source into code Roblox can run: it converts
+	string requires, injects the globals, and then runs the cleanup mods. The
+	mods rewrite files in place, so the caller copies its source into
+	`buildFolder` before calling this.
+]]
 local function build(options: Options)
 	local paths = options.paths or { options.buildFolder }
 

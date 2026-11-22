@@ -9,18 +9,20 @@ local unwrapGroups = require("../../lib/unwrapGroups")
 
 local NAME = "redundant_path_conversion"
 
--- Lute's path type, `Pathlike`, accepts a string, a `Path`, or `PathData`, so
--- a function that takes one doesn't need its path turned into a string first.
---
--- A lint rule sees syntax, not types, so it can't tell which arguments are
--- `Pathlike`. This lists them by hand from Lute's typedefs. Each function maps
--- to how many of its leading parameters are `Pathlike`. `join` and `resolve`
--- take any number of paths, so they map to `math.huge` and every argument
--- counts.
---
--- The `cwd` option of `process.run` and `process.system` isn't here, even
--- though it holds a path. Lute types it as a string, and its runtime rejects a
--- `Path`.
+--[[
+	Lute's path type, `Pathlike`, accepts a string, a `Path`, or `PathData`, so
+	a function that takes one doesn't need its path turned into a string first.
+
+	A lint rule sees syntax, not types, so it can't tell which arguments are
+	`Pathlike`. This lists them by hand from Lute's typedefs. Each function maps
+	to how many of its leading parameters are `Pathlike`. `join` and `resolve`
+	take any number of paths, so they map to `math.huge` and every argument
+	counts.
+
+	The `cwd` option of `process.run` and `process.system` isn't here, even
+	though it holds a path. Lute types it as a string, and its runtime rejects a
+	`Path`.
+]]
 local PATHLIKE_PARAMETERS: { [string]: { [string]: number } } = {
 	["@std/fs"] = {
 		copy = 2,
@@ -84,10 +86,12 @@ local function collectReassignedLocals(cst: syntax.CstStatBlock): { [syntax.CstL
 	return reassigned
 end
 
--- Code can bind a module to any name, as in `local pathlib = require("@std/path")`,
--- so calls are matched by the local they go through rather than its name.
--- This maps each local bound to `require("@std/fs")` or `require("@std/path")`
--- to that require string.
+--[[
+	Code can bind a module to any name, as in `local pathlib = require("@std/path")`,
+	so calls are matched by the local they go through rather than its name.
+	This maps each local bound to `require("@std/fs")` or `require("@std/path")`
+	to that require string.
+]]
 local function collectModuleLocals(
 	cst: syntax.CstStatBlock,
 	reassigned: { [syntax.CstLocal]: true }
@@ -222,10 +226,12 @@ type Bindings = {
 	pathLocals: { [syntax.CstLocal]: true },
 }
 
--- Whether the source shows that `expr` is a `Path`. The rule can't see types,
--- and a value that isn't a path, as in `fs.exists(tostring(123))`, needs its
--- `tostring`. So `tostring` is only reported around a value that's visibly a
--- `Path`.
+--[[
+	Whether the source shows that `expr` is a `Path`. The rule can't see types,
+	and a value that isn't a path, as in `fs.exists(tostring(123))`, needs its
+	`tostring`. So `tostring` is only reported around a value that's visibly a
+	`Path`.
+]]
 local function isVisiblyPath(expr: syntax.CstExpr, bindings: Bindings): boolean
 	local inner = unwrapGroups(expr)
 	local variable = utils.isExprLocal(inner)
@@ -235,10 +241,12 @@ local function isVisiblyPath(expr: syntax.CstExpr, bindings: Bindings): boolean
 	return isPathCall(inner, bindings.modules)
 end
 
--- Returns the wrapper's name, as the source writes it, when `expr` is a
--- conversion the outer call doesn't need: `tostring(x)` around a visible
--- `Path`, or `path.format(x)` around any single argument. `path.format` only accepts a
--- `Pathlike`, so whatever it's given, the outer call accepts too.
+--[[
+	Returns the wrapper's name, as the source writes it, when `expr` is a
+	conversion the outer call doesn't need: `tostring(x)` around a visible
+	`Path`, or `path.format(x)` around any single argument. `path.format` only accepts a
+	`Pathlike`, so whatever it's given, the outer call accepts too.
+]]
 local function getConversionName(expr: syntax.CstExpr, bindings: Bindings): string?
 	local call = utils.isExprCall(expr)
 	if not call or #call.arguments ~= 1 then
@@ -258,16 +266,18 @@ local function getConversionName(expr: syntax.CstExpr, bindings: Bindings): stri
 	return nil
 end
 
--- Removing the wrapper can change what the outer call receives. The wrapper
--- passes along one value. Without it, a call or `...` inside the wrapper lands
--- in the outer call directly, and in the last argument it passes along all of
--- its values. If `getPaths` returns two paths, `fs.copy(path.format(getPaths()))`
--- passes only the first, but `fs.copy(getPaths())` passes both. Those still get
--- reported, without a fix.
---
--- A wrapper in parentheses, or before the last argument, is still cut to one
--- value after the fix, so it's safe. So is an `@std/path` call that returns a
--- `Path`, since that's its only return value.
+--[[
+	Removing the wrapper can change what the outer call receives. The wrapper
+	passes along one value. Without it, a call or `...` inside the wrapper lands
+	in the outer call directly, and in the last argument it passes along all of
+	its values. If `getPaths` returns two paths, `fs.copy(path.format(getPaths()))`
+	passes only the first, but `fs.copy(getPaths())` passes both. Those still get
+	reported, without a fix.
+
+	A wrapper in parentheses, or before the last argument, is still cut to one
+	value after the fix, so it's safe. So is an `@std/path` call that returns a
+	`Path`, since that's its only return value.
+]]
 local function canRemoveWrapper(
 	call: syntax.CstExprCall,
 	position: number,

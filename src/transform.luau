@@ -6,10 +6,12 @@ local rulesPath = require("./rulesPath")
 
 local modsPath = path.join(path.dirname(rulesPath), "mods")
 
--- Runs one of the code mods over `paths` with `lute transform`, which rewrites
--- the files in place. Each entry in `options` becomes a `--name value`
--- argument for the mod. The command runs on the same Lute binary as the
--- calling script, and the call errors when the mod fails.
+--[[
+	Runs one of the code mods over `paths` with `lute transform`, which rewrites
+	the files in place. Each entry in `options` becomes a `--name value`
+	argument for the mod. The command runs on the same Lute binary as the
+	calling script, and the call errors when the mod fails.
+]]
 local function transform(mod: Mod.Mod, paths: { string }, options: { [string]: string }?)
 	local command = {
 		path.format(process.execPath()),

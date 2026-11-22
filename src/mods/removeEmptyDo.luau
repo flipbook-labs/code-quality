@@ -1,14 +1,16 @@
--- Removes `do ... end` blocks that contain no statements, replacing darklua's
--- `remove_empty_do` rule. A block that holds only empty blocks, like
--- `do do end end`, counts as empty too, as does one with only comments in it.
--- `removeUnusedIfBranch` can leave such blocks behind, so this runs after it.
---
--- Darklua repeats its pass until nothing changes, which removes nested empty
--- blocks the same way. When the statement after a removed block opens with
--- `(` and another statement comes before the block, this leaves a `;` in the
--- block's place, so Luau doesn't read that `(` as a call on the line before.
---
--- Run it with `lute transform <package>/src/mods/removeEmptyDo.luau <files>`.
+--[[
+	Removes `do ... end` blocks that contain no statements, replacing darklua's
+	`remove_empty_do` rule. A block that holds only empty blocks, like
+	`do do end end`, counts as empty too, as does one with only comments in it.
+	`removeUnusedIfBranch` can leave such blocks behind, so this runs after it.
+
+	Darklua repeats its pass until nothing changes, which removes nested empty
+	blocks the same way. When the statement after a removed block opens with
+	`(` and another statement comes before the block, this leaves a `;` in the
+	block's place, so Luau doesn't read that `(` as a call on the line before.
+
+	Run it with `lute transform <package>/src/mods/removeEmptyDo.luau <files>`.
+]]
 
 local query = require("@std/syntax/query")
 local syntax = require("@std/syntax")

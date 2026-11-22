@@ -25,10 +25,12 @@ local function isLastStatement(statement: syntax.CstStat): boolean
 	return statement.tag == "return" or statement.tag == "break" or statement.tag == "continue"
 end
 
--- Flags a statement that ends on a line where another statement already
--- ended. Statements are visited in source order, outer ones before the ones
--- nested inside them, so in `call(function() a() b() end)` the call claims the
--- line and `a()` and `b()` are both flagged, as in Selene.
+--[[
+	Flags a statement that ends on a line where another statement already
+	ended. Statements are visited in source order, outer ones before the ones
+	nested inside them, so in `call(function() a() b() end)` the call claims the
+	line and `a()` and `b()` are both flagged, as in Selene.
+]]
 local function lint(
 	cst: syntax.CstStatBlock,
 	sourcepath: path.Path?,

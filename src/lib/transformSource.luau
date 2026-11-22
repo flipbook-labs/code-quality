@@ -8,14 +8,16 @@ type Migration = {
 	read transform: transformTypes.Transformer,
 }
 
--- Runs one code mod over a snippet of Luau source and returns the rewritten
--- source, the way `lute transform` would rewrite a file. Code mods freeze the
--- table they return, so this only reads from it.
---
--- `options` stands in for the `-- --name value` arguments after the files.
--- As in `lute transform`, an option left out takes the default the mod
--- declares, and the mod's `initialize` runs before the file is transformed.
--- `filePath` is the path the mod sees for the snippet.
+--[[
+	Runs one code mod over a snippet of Luau source and returns the rewritten
+	source, the way `lute transform` would rewrite a file. Code mods freeze the
+	table they return, so this only reads from it.
+
+	`options` stands in for the `-- --name value` arguments after the files.
+	As in `lute transform`, an option left out takes the default the mod
+	declares, and the mod's `initialize` runs before the file is transformed.
+	`filePath` is the path the mod sees for the snippet.
+]]
 local function transformSource(
 	migration: Migration,
 	source: string,

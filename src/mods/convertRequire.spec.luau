@@ -7,12 +7,14 @@ local test = require("@std/test")
 local migration = require("./convertRequire")
 local transformSource = require("../lib/transformSource")
 
--- A project laid out the way Rojo would build it: `Packages` holds the
--- package's dependencies, and `src` becomes `Packages.Storyteller`.
--- `Packages._Index` is laid out the way Wally installs a package: `charm-ish`
--- sits beside a link module for its dependency, `Dep`. On disk, `Dep.lua` sits
--- one folder above the package's `src`, so `./Dep` from the package finds no
--- file there.
+--[[
+	A project laid out the way Rojo would build it: `Packages` holds the
+	package's dependencies, and `src` becomes `Packages.Storyteller`.
+	`Packages._Index` is laid out the way Wally installs a package: `charm-ish`
+	sits beside a link module for its dependency, `Dep`. On disk, `Dep.lua` sits
+	one folder above the package's `src`, so `./Dep` from the package finds no
+	file there.
+]]
 local root = path.format(path.join(system.tmpdir(), `code-quality-convert-require-{math.random(1, 1e9)}`))
 local sourcemapPath = path.format(path.join(root, "sourcemap.json"))
 

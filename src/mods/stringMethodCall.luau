@@ -1,9 +1,11 @@
--- Rewrites `string.find(line, "x")` as `line:find("x")`. It changes the calls
--- the `string_method_call` rule flags, apart from the few below that it can't
--- rewrite without changing what the code does. The rule still flags those, so
--- they're easy to find and fix by hand.
---
--- Run it with `lute transform <package>/src/mods/stringMethodCall.luau <files>`.
+--[[
+	Rewrites `string.find(line, "x")` as `line:find("x")`. It changes the calls
+	the `string_method_call` rule flags, apart from the few below that it can't
+	rewrite without changing what the code does. The rule still flags those, so
+	they're easy to find and fix by hand.
+
+	Run it with `lute transform <package>/src/mods/stringMethodCall.luau <files>`.
+]]
 
 local printer = require("@std/syntax/printer")
 local query = require("@std/syntax/query")
@@ -23,10 +25,12 @@ local DELETE: syntaxTypes.Replacement = {
 	preserveTrivia = false,
 }
 
--- Whether `expr` can sit in front of `:method()` as it is. A name, an index,
--- a call, or a parenthesized expression can. Anything else, like `a .. b` or
--- `value :: string`, needs parentheses, or the method call would bind to only
--- part of it.
+--[[
+	Whether `expr` can sit in front of `:method()` as it is. A name, an index,
+	a call, or a parenthesized expression can. Anything else, like `a .. b` or
+	`value :: string`, needs parentheses, or the method call would bind to only
+	part of it.
+]]
 local function isPrefixExpression(expr: syntax.CstExpr): boolean
 	return utils.isExprLocal(expr) ~= nil
 		or utils.isExprGlobal(expr) ~= nil
@@ -45,12 +49,14 @@ local function hasComment(triviaList: { syntax.Trivia }): boolean
 	return false
 end
 
--- Only strings have methods. `string.rep(5, 3)` works because the library
--- turns the number into text, but `(5):rep(3)` throws. So the receiver must be
--- something that could hold a string. A literal never does, since the rule
--- already skips string literals. Neither does `-x`, `#x`, `not x`, or a binary
--- expression whose result is a number or boolean, like `a + b` or `a == b`.
--- `a .. b` is a string, and `a or b` could be one.
+--[[
+	Only strings have methods. `string.rep(5, 3)` works because the library
+	turns the number into text, but `(5):rep(3)` throws. So the receiver must be
+	something that could hold a string. A literal never does, since the rule
+	already skips string literals. Neither does `-x`, `#x`, `not x`, or a binary
+	expression whose result is a number or boolean, like `a + b` or `a == b`.
+	`a .. b` is a string, and `a or b` could be one.
+]]
 local function couldBeString(expr: syntax.CstExpr): boolean
 	local inner = unwrapGroups(expr)
 	if isLiteral(inner) or utils.isExprUnary(inner) ~= nil then
@@ -111,11 +117,13 @@ local function getPositionKey(location: syntax.Span): string
 	return `{location.beginLine}:{location.beginColumn}`
 end
 
--- Finds where each statement that can open with an expression begins, like a
--- bare call or an assignment. A rewrite that would put `(` at one of these
--- positions is skipped. Luau could read that `(` as a call on the end of the
--- line before, as in `local saved = getValue()` followed by
--- `(a .. b):gsub("x", "y")`.
+--[[
+	Finds where each statement that can open with an expression begins, like a
+	bare call or an assignment. A rewrite that would put `(` at one of these
+	positions is skipped. Luau could read that `(` as a call on the end of the
+	line before, as in `local saved = getValue()` followed by
+	`(a .. b):gsub("x", "y")`.
+]]
 local function getStatementStarts(parseresult: syntax.CstParseResult): { [string]: true }
 	local starts: { [string]: true } = {}
 	query
@@ -133,10 +141,12 @@ local function transform(context: transformTypes.Context): syntaxTypes.Replaceme
 	local statementStarts = getStatementStarts(context.parseresult)
 	local calls = query.findAllFromRoot(context.parseresult, utils.isExprCall).nodes
 
-	-- The query lists each call before the calls inside it. Working backwards
-	-- rewrites the inner ones first, so when an outer call prints its receiver,
-	-- as in `string.sub(string.upper(name), 1, 1)`, the receiver already reads
-	-- `name:upper()`.
+	--[[
+		The query lists each call before the calls inside it. Working backwards
+		rewrites the inner ones first, so when an outer call prints its receiver,
+		as in `string.sub(string.upper(name), 1, 1)`, the receiver already reads
+		`name:upper()`.
+	]]
 	for i = #calls, 1, -1 do
 		local call = calls[i]
 		local method = getStringMethodName(call)

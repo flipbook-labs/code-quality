@@ -26,11 +26,13 @@ local function isStringLiteral(expr: syntax.CstExpr): boolean
 	return utils.isExprConstantString(expr) ~= nil or utils.isExprInterpString(expr) ~= nil
 end
 
--- When `call` calls a string library function on anything but a string
--- literal, as in `string.find(line, "x")`, returns the function's name
--- ("find"). Returns nil for every other call. The `string_method_call` rule
--- flags the calls this matches. Its code mod starts from the same calls and
--- rewrites the ones it can without changing what the code does.
+--[[
+	When `call` calls a string library function on anything but a string
+	literal, as in `string.find(line, "x")`, returns the function's name
+	("find"). Returns nil for every other call. The `string_method_call` rule
+	flags the calls this matches. Its code mod starts from the same calls and
+	rewrites the ones it can without changing what the code does.
+]]
 local function getStringMethodName(call: syntax.CstExprCall): string?
 	local index = utils.isExprIndexName(call.func)
 	if not index or index.accessor.text ~= "." then

@@ -8,15 +8,17 @@ local unwrapGroups = require("../../lib/unwrapGroups")
 
 local NAME = "no_tonumber_cast"
 
--- `tonumber` returns `nil` when its string isn't a number. A cast like
--- `tonumber(s) :: number` hides that from the type checker, so a string that
--- stops being numeric later fails somewhere far from here. Any cast on the
--- result is flagged, since one that keeps the `nil`, like `:: number?`, adds
--- nothing. A fallback like `tonumber(s) or 0` handles `nil` without a cast, so
--- it isn't flagged.
---
--- The rule reports these without a fix, because only the code around the call
--- knows what should happen when the string isn't a number.
+--[[
+	`tonumber` returns `nil` when its string isn't a number. A cast like
+	`tonumber(s) :: number` hides that from the type checker, so a string that
+	stops being numeric later fails somewhere far from here. Any cast on the
+	result is flagged, since one that keeps the `nil`, like `:: number?`, adds
+	nothing. A fallback like `tonumber(s) or 0` handles `nil` without a cast, so
+	it isn't flagged.
+
+	The rule reports these without a fix, because only the code around the call
+	knows what should happen when the string isn't a number.
+]]
 local function isTonumberCast(cast: syntax.CstExprTypeAssertion): boolean
 	local call = utils.isExprCall(unwrapGroups(cast.operand))
 	local global = if call then utils.isExprGlobal(call.func) else nil

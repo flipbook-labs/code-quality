@@ -30,18 +30,20 @@ type LintReport = {
 	},
 }
 
--- Lints `paths` with `lute lint` and the CodeQuality rules, and prints each
--- finding. With `blocking` on, any finding errors. With it off, this returns
--- how many findings there were.
---
--- `lute lint` exits cleanly even when a rule throws or a file can't be
--- parsed. It only prints an error and moves on. So the findings go to a JSON
--- report instead of the terminal, and anything `lute lint` still prints means
--- it failed, which errors here whether or not `blocking` is on. Files are
--- linted one at a time because Lute's parallel linting can crash at random
--- (#27). The report's name includes this process's id and a count of the
--- calls in it, so lint runs that happen at the same time can't overwrite each
--- other's report.
+--[[
+	Lints `paths` with `lute lint` and the CodeQuality rules, and prints each
+	finding. With `blocking` on, any finding errors. With it off, this returns
+	how many findings there were.
+
+	`lute lint` exits cleanly even when a rule throws or a file can't be
+	parsed. It only prints an error and moves on. So the findings go to a JSON
+	report instead of the terminal, and anything `lute lint` still prints means
+	it failed, which errors here whether or not `blocking` is on. Files are
+	linted one at a time because Lute's parallel linting can crash at random
+	(#27). The report's name includes this process's id and a count of the
+	calls in it, so lint runs that happen at the same time can't overwrite each
+	other's report.
+]]
 local callCount = 0
 
 local function lint(paths: { string }, options: Options?): number
