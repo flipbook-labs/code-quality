@@ -5,6 +5,8 @@ collapsed = ["Internal"]
 current = "0.7.0"
 mirror = [
   { file = "workspace/code-quality/pkg.luau" },
+  { file = "README.md", pattern = "rev = \"v([%d%.]+)\"" },
+  { file = "README.md", pattern = "@lpm/code%-quality@v([%d%.]+)" },
 ]
 
 [kind]
