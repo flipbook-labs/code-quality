@@ -8,11 +8,13 @@ local types = require("../../types")
 
 local NAME = "bad_string_escape"
 
--- The characters that may follow a backslash in a Luau string, besides the
--- quotes, which depend on the string's quote style. The digits, `x`, `u`, and
--- `z` start longer escapes. Luau's parser rejects those when they're
--- malformed or out of range, so a file with one never reaches this rule. A
--- backslash before a line break continues the string onto the next line.
+--[[
+	The characters that may follow a backslash in a Luau string, besides the
+	quotes, which depend on the string's quote style. The digits, `x`, `u`, and
+	`z` start longer escapes. Luau's parser rejects those when they're
+	malformed or out of range, so a file with one never reaches this rule. A
+	backslash before a line break continues the string onto the next line.
+]]
 local VALID_ESCAPES = "abfnrtv\\\n\rxuz0123456789"
 
 type Problem = {
@@ -74,10 +76,12 @@ local function locateEscape(token: syntax.CstToken, offset: number): syntax.Span
 	})
 end
 
--- Flags escapes that don't exist, like `"\q"`, and quotes escaped where they
--- don't need to be, like `"\'"`. Luau's parser already rejects malformed
--- escapes such as `"\x1"`, so Selene's checks for those have nothing to do
--- here. Interpolated strings are left alone, as they are in Selene.
+--[[
+	Flags escapes that don't exist, like `"\q"`, and quotes escaped where they
+	don't need to be, like `"\'"`. Luau's parser already rejects malformed
+	escapes such as `"\x1"`, so Selene's checks for those have nothing to do
+	here. Interpolated strings are left alone, as they are in Selene.
+]]
 local function lint(cst: syntax.CstStatBlock, sourcepath: path.Path?): { types.LintViolation }
 	local violations: { types.LintViolation } = {}
 

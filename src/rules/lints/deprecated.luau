@@ -44,10 +44,12 @@ local function readAllow(options: { [string]: unknown }): { Pattern }
 	return patterns
 end
 
--- A pattern allows the path it names and everything under it, so `table`
--- allows `table.getn`. A `*` word matches any one name, so `table.*` allows
--- `table.getn` and `table.foreach`. As in Selene, a pattern longer than the
--- name never matches it.
+--[[
+	A pattern allows the path it names and everything under it, so `table`
+	allows `table.getn`. A `*` word matches any one name, so `table.*` allows
+	`table.getn` and `table.foreach`. As in Selene, a pattern longer than the
+	name never matches it.
+]]
 local function isAllowed(patterns: { Pattern }, namePath: { string }): boolean
 	for _, pattern in patterns do
 		if #pattern <= #namePath then
@@ -84,10 +86,12 @@ local function renderReplacement(template: string, values: { string }): string?
 	return nil
 end
 
--- The argument as written in the source, without the whitespace around it.
--- A replacement can put an operator next to it, as in `#%1`, so an argument
--- built from operators is wrapped in parentheses: `table.getn(a or b)`
--- becomes `#(a or b)`, not `#a or b`.
+--[[
+	The argument as written in the source, without the whitespace around it.
+	A replacement can put an operator next to it, as in `#%1`, so an argument
+	built from operators is wrapped in parentheses: `table.getn(a or b)`
+	becomes `#(a or b)`, not `#a or b`.
+]]
 local function sourceText(expr: syntax.CstExpr): string
 	local text = printer.printNode(expr)
 	text = text:match("^%s*(.-)%s*$") or text
@@ -97,10 +101,12 @@ local function sourceText(expr: syntax.CstExpr): string
 	return text
 end
 
--- The path as written, so a method call reads `game:service` rather than the
--- `game.service` it's looked up by. A name path is a chain of indexes like
--- `a.b.c`, and only the last index in one can be a colon, since `a:b.c` isn't
--- valid Luau.
+--[[
+	The path as written, so a method call reads `game:service` rather than the
+	`game.service` it's looked up by. A name path is a chain of indexes like
+	`a.b.c`, and only the last index in one can be a colon, since `a:b.c` isn't
+	valid Luau.
+]]
 local function displayPath(expr: syntax.CstExpr, namePath: { string }): string
 	local instantiate = utils.isExprInstantiate(expr)
 	local index = utils.isExprIndexName(if instantiate then instantiate.expr else expr)

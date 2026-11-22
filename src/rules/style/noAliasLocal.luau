@@ -95,13 +95,15 @@ local function collectWrites(cst: syntax.CstStatBlock): Writes
 	return writes
 end
 
--- A local can't simply be swapped for the field it was read from when either
--- one is written somewhere:
---
--- - A local that gets reassigned is a variable seeded from the field.
--- - When the field, a field it sits in, or the parameter itself is assigned,
---   the local may be keeping the earlier value, as in
---   `local old = props.value; props.value = nextValue; return old`.
+--[[
+	A local can't simply be swapped for the field it was read from when either
+	one is written somewhere:
+
+	- A local that gets reassigned is a variable seeded from the field.
+	- When the field, a field it sits in, or the parameter itself is assigned,
+	  the local may be keeping the earlier value, as in
+	  `local old = props.value; props.value = nextValue; return old`.
+]]
 local function isWritten(variable: syntax.CstLocal, chain: FieldChain, writes: Writes): boolean
 	if writes.locals[variable] or writes.locals[chain.root] then
 		return true

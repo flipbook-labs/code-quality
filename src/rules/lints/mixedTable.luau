@@ -8,10 +8,12 @@ local types = require("../../types")
 
 local NAME = "mixed_table"
 
--- Flags a table constructor that has both positional entries, like `{ "a" }`,
--- and keyed entries, like `{ a = 1 }` or `{ [1] = "a" }`. Like Selene, an
--- explicit numeric key counts as keyed, so `{ 1, [2] = b }` is flagged too.
--- Each table is reported once, at its first switch between the two kinds.
+--[[
+	Flags a table constructor that has both positional entries, like `{ "a" }`,
+	and keyed entries, like `{ a = 1 }` or `{ [1] = "a" }`. Like Selene, an
+	explicit numeric key counts as keyed, so `{ 1, [2] = b }` is flagged too.
+	Each table is reported once, at its first switch between the two kinds.
+]]
 local function findMixedEntries(tableExpr: syntax.CstExprTable): syntax.Span?
 	local lastKeyed: syntax.CstTableExprItem? = nil
 	local lastPositional: syntax.CstTableExprItem? = nil

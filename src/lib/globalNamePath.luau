@@ -1,10 +1,12 @@
 local syntax = require("@std/syntax")
 local utils = require("@std/syntax/utils")
 
--- Returns the names in a reference to a global read through dot or colon
--- indexes, such as `{ "table", "getn" }` for `table.getn`. Returns nil for
--- anything else: a local at the root, a bracket index, or a call partway down
--- the chain. Explicit type arguments, as in `table.clone<<T>>`, are skipped.
+--[[
+	Returns the names in a reference to a global read through dot or colon
+	indexes, such as `{ "table", "getn" }` for `table.getn`. Returns nil for
+	anything else: a local at the root, a bracket index, or a call partway down
+	the chain. Explicit type arguments, as in `table.clone<<T>>`, are skipped.
+]]
 local function getGlobalNamePath(expr: syntax.CstExpr): { string }?
 	local names: { string } = {}
 	local instantiate = utils.isExprInstantiate(expr)

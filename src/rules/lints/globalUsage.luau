@@ -8,10 +8,12 @@ local types = require("../../types")
 
 local NAME = "global_usage"
 
--- Flags each use of `_G` that doesn't refer to a local or to a name an earlier
--- assignment declared. Selene also flags `shared` when
--- its Roblox standard library is set, and this rule doesn't, because Lute
--- doesn't know which standard library a project uses.
+--[[
+	Flags each use of `_G` that doesn't refer to a local or to a name an earlier
+	assignment declared. Selene also flags `shared` when
+	its Roblox standard library is set, and this rule doesn't, because Lute
+	doesn't know which standard library a project uses.
+]]
 local function lint(
 	cst: syntax.CstStatBlock,
 	sourcepath: path.Path?,

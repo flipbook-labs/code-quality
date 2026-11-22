@@ -8,11 +8,13 @@ local types = require("../../types")
 
 local NAME = "inline_table"
 
--- Up to three entries still read well on one line. From four on, each entry
--- gets its own line so the table is easy to scan and diffs stay small. Every
--- kind of entry counts as one: in a table constructor, an array element, a
--- `name = value` field or a `[key] = value` field, and in a table type, a
--- property or an indexer such as `[string]: number`.
+--[[
+	Up to three entries still read well on one line. From four on, each entry
+	gets its own line so the table is easy to scan and diffs stay small. Every
+	kind of entry counts as one: in a table constructor, an array element, a
+	`name = value` field or a `[key] = value` field, and in a table type, a
+	property or an indexer such as `[string]: number`.
+]]
 local MAX_INLINE_ENTRIES = 3
 
 -- A table that a function returns is that function's result, so it's expanded
@@ -67,10 +69,12 @@ local function lint(cst: syntax.CstStatBlock, sourcepath: path.Path?): { types.L
 	local violations: { types.LintViolation } = {}
 	local returned = collectReturnedTables(cst)
 
-	-- Lute crashes on a report whose location lies inside a table type
-	-- (flipbook-labs/code-quality#14), which a constructor can, as in
-	-- `typeof({ 1, 2, 3, 4 })`. `getReportLocation` widens such a report to
-	-- the outermost table type and leaves the rest unchanged.
+	--[[
+		Lute crashes on a report whose location lies inside a table type
+		(flipbook-labs/code-quality#14), which a constructor can, as in
+		`typeof({ 1, 2, 3, 4 })`. `getReportLocation` widens such a report to
+		the outermost table type and leaves the rest unchanged.
+	]]
 	query.findAllFromRoot(cst, utils.isExprTable):forEach(function(tbl)
 		if not isInline(tbl.location) then
 			return

@@ -1,14 +1,16 @@
 local syntax = require("@std/syntax")
 local visitorLib = require("@std/syntax/visitor")
 
--- Tracks which names are in scope at each point of a file, as Selene's
--- ScopeManager does, so the lints that depend on scope flag what Selene flags.
---
--- Two kinds of binding are in scope: `local` declarations, and the bindings
--- Selene creates when a name is assigned without being declared. Those are
--- called "hoisted" here. The first such assignment in a scope makes the name
--- visible from there on, so later uses resolve to it and are not reported as
--- unscoped.
+--[[
+	Tracks which names are in scope at each point of a file, as Selene's
+	ScopeManager does, so the lints that depend on scope flag what Selene flags.
+
+	Two kinds of binding are in scope: `local` declarations, and the bindings
+	Selene creates when a name is assigned without being declared. Those are
+	called "hoisted" here. The first such assignment in a scope makes the name
+	visible from there on, so later uses resolve to it and are not reported as
+	unscoped.
+]]
 
 export type Declaration = {
 	name: string,

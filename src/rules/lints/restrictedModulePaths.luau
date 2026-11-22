@@ -51,10 +51,12 @@ local function flatten(expr: syntax.CstExpr): (syntax.CstExpr, { syntax.CstExpr 
 	return current, ordered
 end
 
--- Builds the dotted path Selene matches. It reads names up to the first call,
--- since a call's result isn't a module path, and gives up on a bracket index.
--- Type arguments, as in `a.b<<T>>()`, don't change the path, so they're skipped.
--- Returns the path and the first call, if there is one before it stops.
+--[[
+	Builds the dotted path Selene matches. It reads names up to the first call,
+	since a call's result isn't a module path, and gives up on a bracket index.
+	Type arguments, as in `a.b<<T>>()`, don't change the path, so they're skipped.
+	Returns the path and the first call, if there is one before it stops.
+]]
 local function pathOf(root: syntax.CstExpr, suffixes: { syntax.CstExpr }): (string?, syntax.CstExprCall?)
 	local names: { string } = {}
 	if root.tag == "global" then

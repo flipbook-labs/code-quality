@@ -8,14 +8,16 @@ local types = require("../../types")
 
 local NAME = "unscoped_variables"
 
--- Assigning to a name no local declares creates a global. Selene reports an
--- assignment only when no local or earlier assignment has made the name
--- visible. The first such assignment makes the name visible for the rest of
--- its scope, so later ones in that scope aren't reported.
---
--- Selene also skips assignments to standard-library globals that have fields,
--- such as `string = ...`. Lute's rules don't have the standard library, so
--- that exception isn't made here.
+--[[
+	Assigning to a name no local declares creates a global. Selene reports an
+	assignment only when no local or earlier assignment has made the name
+	visible. The first such assignment makes the name visible for the rest of
+	its scope, so later ones in that scope aren't reported.
+
+	Selene also skips assignments to standard-library globals that have fields,
+	such as `string = ...`. Lute's rules don't have the standard library, so
+	that exception isn't made here.
+]]
 local function lint(
 	cst: syntax.CstStatBlock,
 	sourcepath: path.Path?,

@@ -1,7 +1,9 @@
--- Reads deprecation messages from Roblox's creator-docs reference, the YAML
--- pages under content/en-us/reference/engine in the Roblox/creator-docs
--- repository. generate-roblox-api.luau fetches the pages and uses these
--- messages in the data it writes.
+--[[
+	Reads deprecation messages from Roblox's creator-docs reference, the YAML
+	pages under content/en-us/reference/engine in the Roblox/creator-docs
+	repository. generate-roblox-api.luau fetches the pages and uses these
+	messages in the data it writes.
+]]
 
 -- Messages from one creator-docs page. `page` is the message for the class or
 -- enum itself, and `items` maps a member or item name to its message.
@@ -17,11 +19,13 @@ local function empty(): DocsMessages
 	}
 end
 
--- Turns creator-docs markup into plain text. A reference such as
--- `Class.Instance:Clone()` drops its `Class.` prefix, and the same goes for
--- `Datatype.`, `Library.`, and `Global.<group>.`. A reference written as
--- `Class.ServiceProvider:GetService()|GetService()` keeps only the text after
--- the bar, and a Markdown link keeps only its text.
+--[[
+	Turns creator-docs markup into plain text. A reference such as
+	`Class.Instance:Clone()` drops its `Class.` prefix, and the same goes for
+	`Datatype.`, `Library.`, and `Global.<group>.`. A reference written as
+	`Class.ServiceProvider:GetService()|GetService()` keeps only the text after
+	the bar, and a Markdown link keeps only its text.
+]]
 local function cleanMarkup(text: string): string
 	text = text:gsub("`([^`]+)`", function(reference: string): string
 		local display = reference:match("|(.+)$")
@@ -57,10 +61,12 @@ local function firstParagraph(lines: { string }): string?
 	return cleanMarkup(table.concat(words, " "))
 end
 
--- Reads every `deprecation_message` from a creator-docs page. The pages are
--- generated YAML in a fixed layout, so a line scanner is enough: entries start
--- with `  - name: ...`, and a message is either an inline scalar or a block
--- whose lines are indented further than its key.
+--[[
+	Reads every `deprecation_message` from a creator-docs page. The pages are
+	generated YAML in a fixed layout, so a line scanner is enough: entries start
+	with `  - name: ...`, and a message is either an inline scalar or a block
+	whose lines are indented further than its key.
+]]
 local function parse(source: string): DocsMessages
 	local lines = source:split("\n")
 	local messages = empty()

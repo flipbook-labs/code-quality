@@ -13,12 +13,14 @@ local function isCall(expr: syntax.CstExpr): boolean
 	return utils.isExprCall(unwrapGroups(expr)) ~= nil
 end
 
--- A trailing value that can stand for several, or that reads as setting the
--- rest to nil on purpose, keeps a short right side from being flagged.
---
--- Selene treats `(f())` as a call here even though the parentheses keep only
--- its first value, and it treats `(nil)` as not nil. Both are matched so this
--- flags the same code Selene does.
+--[[
+	A trailing value that can stand for several, or that reads as setting the
+	rest to nil on purpose, keeps a short right side from being flagged.
+
+	Selene treats `(f())` as a call here even though the parentheses keep only
+	its first value, and it treats `(nil)` as not nil. Both are matched so this
+	flags the same code Selene does.
+]]
 local function canFillRemainingNames(expr: syntax.CstExpr): boolean
 	if utils.isExprGroup(expr) then
 		return isCall(expr)
