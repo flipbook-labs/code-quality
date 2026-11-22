@@ -24,6 +24,7 @@ export type Rule =
 	| "no_paren_truncation"
 	| "no_tonumber_cast"
 	| "prefer_annotation"
+	| "prefer_block_comment"
 	| "prefer_generic_iteration"
 	| "redundant_path_conversion"
 	| "restricted_module_paths"
@@ -61,6 +62,7 @@ local Rule = table.freeze({
 	NoParenTruncation = "no_paren_truncation" :: "no_paren_truncation",
 	NoTonumberCast = "no_tonumber_cast" :: "no_tonumber_cast",
 	PreferAnnotation = "prefer_annotation" :: "prefer_annotation",
+	PreferBlockComment = "prefer_block_comment" :: "prefer_block_comment",
 	PreferGenericIteration = "prefer_generic_iteration" :: "prefer_generic_iteration",
 	RedundantPathConversion = "redundant_path_conversion" :: "redundant_path_conversion",
 	RestrictedModulePaths = "restricted_module_paths" :: "restricted_module_paths",
