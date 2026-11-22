@@ -111,7 +111,8 @@ These apply to every rule:
 - `-- selene: allow(...)` comments are ignored. Use `-- lute-lint-ignore(<rule>)` on the line above the statement.
 - Options go in `.config.luau`, not `selene.toml`, and there is no `std` setting. The Roblox lints run in every project, where Selene runs them only when `std` includes `roblox`.
 - `ignore_pattern` options take a Lua pattern, not a regular expression. The `"^_"` default behaves the same, but a pattern copied from `selene.toml` may not.
-  These apply to one rule or a group of them:
+
+These apply to one rule or a group of them:
 
 | Rule                                                                                                         | Difference                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
