@@ -1,8 +1,36 @@
-# Code Quality
+# CodeQuality
 
-Shared Luau lint rules, code mods, and formatter configs for flipbook-labs repos.
+CodeQuality holds the Luau lint rules, house-style rules, and code mods that flipbook-labs repos share, so every repo enforces them the same way. The house style is written as prose in [agent-skills](https://github.com/flipbook-labs/agent-skills). This package covers the parts a tool can check.
 
-The house Luau style is written down as prose in [agent-skills](https://github.com/flipbook-labs/agent-skills). Rules that a tool can check belong here instead, so every repo enforces them the same way and nobody has to remember them. Lint rules run under [`lute lint`](https://github.com/luau-lang/lute), and the package is distributed with Loom so each repo pins a known version.
+Built for flipbook-labs repos.
+
+## Install
+
+Add CodeQuality to `pkg.luau` as a dev dependency:
+
+```luau
+dev_dependencies = {
+	["code-quality"] = {
+		rev = "v0.7.0",
+		sourceKind = "github",
+		source = "https://github.com/flipbook-labs/code-quality",
+	},
+},
+```
+
+Then run `lute pkg install --vendor`. That copies CodeQuality into a `.lpm` folder, and scripts require it from there.
+
+## Use
+
+Lint a repo from a Lute script, such as `.lute/lint.luau`, and run it with `lute run lint`:
+
+```luau
+local CodeQuality = require("@lpm/code-quality@v0.7.0")
+
+CodeQuality.lint({ "src", ".lute" })
+```
+
+`CodeQuality.lint` runs `lute lint` with the rules over the paths, prints each finding, and errors when there is one.
 
 ## Rules
 
@@ -10,6 +38,17 @@ The rules come in two folders:
 
 - `src/rules/lints` catches likely bugs, as a replacement for [Selene](https://github.com/Kampfkarren/selene). Each rule is named after the Selene lint it ports and matches its behavior, except for the cases in [Differences from Selene](#differences-from-selene).
 - `src/rules/style` enforces the house style.
+
+`CodeQuality.lint` runs both folders by default. Its `rules` option takes a folder instead: `CodeQuality.LINT_RULES_PATH` for only the Selene replacement, or `CodeQuality.STYLE_RULES_PATH` for only the style rules. Set `blocking = false` to print findings as warnings instead of erroring:
+
+```luau
+-- Only the Selene replacement, with findings printed as warnings.
+CodeQuality.lint({ "src" }, { rules = CodeQuality.LINT_RULES_PATH, blocking = false })
+```
+
+`CodeQuality.lint` also errors when `lute lint` itself fails, such as when a rule throws. Lute's built-in rules run alongside these.
+
+To call `lute lint` yourself, pass one folder to `--rules`.
 
 ### Lints
 
@@ -36,7 +75,7 @@ The rules come in two folders:
 | `unbalanced_assignments`                | An assignment with more values than names, or fewer values without a trailing call                                                                                                                                                                                                      |
 | `unscoped_variables`                    | An assignment to a name no local declares, which makes a global                                                                                                                                                                                                                         |
 
-`empty_loop` takes a `comments_count` option. When it's `true`, a loop whose body is only a comment isn't flagged. `multiple_statements` takes a `one_line_if` option: `"break-return-only"` (the default) allows `if x then return end` on one line, `"allow"` allows any one-line `if` with a single statement, and `"deny"` allows none. Set options in `.config.luau`:
+Set a rule's options under `lute.lint.ruleconfigs` in `.config.luau`:
 
 ```luau
 return {
@@ -50,13 +89,16 @@ return {
 }
 ```
 
-`high_cyclomatic_complexity` takes one option, `maximum_complexity`, which defaults to `40`. Set it under `lute.lint.ruleconfigs.high_cyclomatic_complexity.options`.
+Options for the lints that take them:
 
-`deprecated` takes an `allow` option, a list of dotted paths to leave alone, such as `table.getn` or `table.*`. A path also allows everything under it. Write a method call with a dot, as in `workspace.FindPartOnRay`.
+- `empty_loop` takes `comments_count`. When it's `true`, a loop whose body is only a comment isn't flagged.
+- `multiple_statements` takes `one_line_if`: `"break-return-only"` (the default) allows `if x then return end` on one line, `"allow"` allows any one-line `if` with a single statement, and `"deny"` allows none.
+- `high_cyclomatic_complexity` takes `maximum_complexity`, which defaults to `40`.
+- `deprecated` takes `allow`, a list of dotted paths to leave alone, such as `table.getn` or `table.*`. A path also allows everything under it. Write a method call with a dot, as in `workspace.FindPartOnRay`.
+- `shadowing` and `unscoped_variables` take `ignore_pattern`, which defaults to `"^_"`. `global_usage` also takes `ignore_pattern`, but it has no default, so every use of `_G` is flagged until a pattern is set. A pattern such as `"^_.*_$"` allows a field like `_G._foo_`.
+- `restricted_module_paths` takes `restricted_paths`, a map from a dotted path such as `"OldLibrary.Utils.deprecatedFunction"` to the message to show for it. It flags nothing until that map is set.
 
-The Roblox APIs `deprecated` knows about are generated from Roblox's API dump into `src/generated/robloxApiData.luau`, with messages from Roblox's creator-docs reference. A daily workflow reruns `lute run generate-roblox-api` and opens a PR when a new Studio build changes them. Run the script by hand to refresh them sooner.
-
-`shadowing` and `unscoped_variables` take an `ignore_pattern` option, which defaults to `"^_"`. `global_usage` also takes `ignore_pattern`, but it has no default, so every use of `_G` is flagged until a pattern is set; a pattern such as `"^_.*_$"` allows a field like `_G._foo_`. `restricted_module_paths` takes `restricted_paths`, a map from a dotted path such as `"OldLibrary.Utils.deprecatedFunction"` to the message to show for it, and flags nothing until that map is set. These patterns are Lua patterns, not regular expressions.
+The Roblox APIs that `deprecated` knows about come from Roblox's API dump for the current Studio build, with messages from Roblox's creator docs.
 
 ### Differences from Selene
 
@@ -119,53 +161,13 @@ These Selene lints have no rule here:
 | `string_union_enum`         | A frozen table of named constants alongside an exported union of three or more string literals     |
 | `tostring_in_interpolation` | `` `got {value}` `` instead of `` `got {tostring(value)}` ``                                       |
 
-Casting a table to `{ unknown }` or `{ any }`, as React dependency arrays often do, widens it rather than setting a type parameter, so `explicit_instantiation` allows it.
+Casting a table to `{ unknown }` or `{ any }`, as React dependency arrays often do, widens it rather than setting a type parameter, so `explicit_instantiation` allows it. `explicit_instantiation` also flags a cast on the result of a call whose only argument is a table constructor. It asks for `table.freeze<<Metrics>>({ ... })` instead of `table.freeze({ ... }) :: Metrics`. It needs StyLua's `syntax = "Luau"` setting, since StyLua can't parse `f<<T>>()` without it.
 
-Every rule reports at warning severity. To silence one on a statement, put `-- lute-lint-ignore(<rule>)` on the line above it. `no_any`, `redundant_path_conversion`, and `tostring_in_interpolation` come with fixes that `lute lint --auto-fix` applies.
+`no_any`, `redundant_path_conversion`, and `tostring_in_interpolation` come with fixes that `lute lint --auto-fix` applies.
 
 A Lute script can name a rule with `CodeQuality.Rule`, such as `CodeQuality.Rule.NoAny` for `no_any`.
 
-`explicit_instantiation` also flags a cast on the result of a call whose only argument is a table constructor. It asks for `table.freeze<<Metrics>>({ ... })` instead of `table.freeze({ ... }) :: Metrics`.
-
 `redundant_path_conversion` checks the paths passed to `@std/fs` and `@std/path` functions, matched through whatever local `require` binds them to. It flags `path.format` around any value, but `tostring` only around a value the source shows is a `Path`: an `@std/path` call that returns one, a local or parameter annotated `path.Path` (or a bare `Path` when the file declares `type Path = path.Path`), or a local set from such a call and never reassigned. A `tostring` around anything else, like `fs.exists(tostring(123))`, may be needed, so it's left alone. The `cwd` option of `process.run` only accepts a string, so it's left alone too.
-
-Explicit instantiation needs StyLua's `syntax = "Luau"` setting. Without it, StyLua can't parse `f<<T>>()`.
-
-## Using the rules
-
-Point `lute lint` at a rule folder of the installed package. Declare the package as a dev dependency in `pkg.luau`, under the `code-quality` key:
-
-```luau
-dev_dependencies = {
-	["code-quality"] = {
-		rev = "v0.3.0",
-		sourceKind = "github",
-		source = "https://github.com/flipbook-labs/code-quality",
-	},
-},
-```
-
-`lute run install` adds a `code-quality` alias to `.config.luau` that points at the installed package. The package exports each rule folder's absolute path, so a Lute script requires it by that alias and doesn't need to know where Loom installed it:
-
-- `LINT_RULES_PATH` is `src/rules/lints`, the Selene replacement.
-- `STYLE_RULES_PATH` is `src/rules/style`, the house style.
-- `RULES_PATH` is `src/rules`, which runs both.
-- `MODS_PATH` is `src/mods`, the code mods below.
-
-`CodeQuality.lint` runs `lute lint` with the rules over a list of files and folders, prints each finding, and returns how many there were:
-
-```luau
-local CodeQuality = require("@code-quality")
-
-CodeQuality.lint({ "src", ".lute" })
-
--- Only the Selene replacement, with findings printed as warnings.
-CodeQuality.lint({ "src" }, { rules = CodeQuality.LINT_RULES_PATH, blocking = false })
-```
-
-It errors on any finding unless `blocking` is `false`. It always errors when `lute lint` itself fails, as when a rule throws: `lute lint` prints that error but still exits cleanly, so `lint` reads the findings from a JSON report and treats any other output as a failure. It lints one file at a time to avoid a crash in Lute's parallel linting (#27). Lute's built-in rules run alongside these.
-
-To call `lute lint` yourself, pass one folder to `--rules`. It keeps only the last `--rules` it's given, so passing the flag once per folder runs just the last one.
 
 ## Code mods
 
@@ -176,7 +178,7 @@ A code mod rewrites source in place, for a one-time migration or a fix too large
 | `stringMethodCall`       | Rewrites `string.find(value, ...)` as `value:find(...)`                     |
 | `convertRequire`         | Rewrites `require("@pkg/React")` as `require(script.Parent.Packages.React)` |
 | `injectGlobalValue`      | Replaces a build global like `_G.BUILD_CHANNEL` with its value              |
-| `computeExpression`      | Folds expressions built from literals, like `2 * 60` or `"prod" == "dev"`   |
+| `computeExpression`      | Folds expressions built from literals, like `2 * 60 * 1000`                 |
 | `removeUnusedIfBranch`   | Removes `if` branches that never run and conditions that always pass        |
 | `removeUnusedWhile`      | Removes `while` loops whose condition is always false                       |
 | `filterAfterEarlyReturn` | Removes statements after a `do return end`                                  |
@@ -187,17 +189,15 @@ All but `stringMethodCall` replace a step of a [darklua](https://github.com/seao
 
 `stringMethodCall` fixes what `string_method_call` flags. It leaves a few calls alone because rewriting them could change what the code does: a first argument that can't be a string, like `-5` or `a + b`, a call or `...` passed as the only argument, which may hand over several values, a call with a comment beside its first argument or inside `string.<method>`, and a rewrite that would start a statement with `(`, which Luau could read as a call on the line before. The rule still flags those, so lint afterwards to find any that need a hand edit.
 
-## Running a code mod
+### Running a code mod
 
-From a Lute script, `CodeQuality.transform` runs one mod over a list of files and folders. `CodeQuality.Mod` names each mod, and the options table becomes the mod's `--name value` arguments:
+From a Lute script that requires CodeQuality as in [Use](#use), `CodeQuality.transform` runs one mod over a list of files and folders. `CodeQuality.Mod` names each mod, and the options table becomes the mod's `--name value` arguments:
 
 ```luau
-local CodeQuality = require("@code-quality")
-
 CodeQuality.transform(CodeQuality.Mod.StringMethodCall, { "src" })
 ```
 
-From a terminal, pass `lute transform` the mod and the files or folders to rewrite. `<package>` is the installed package's folder, the one the `code-quality` alias points to in `.config.luau`. Preview the changes with `--dry-run` first:
+From a terminal, pass `lute transform` the mod and the files or folders to rewrite. `<package>` is the vendored package folder under `.lpm`. Preview the changes with `--dry-run` first:
 
 ```sh
 lute transform <package>/src/mods/stringMethodCall.luau --dry-run src
@@ -240,11 +240,9 @@ lute transform <package>/src/mods/removeEmptyDo.luau dist
 
 `injectGlobalValue` sets every global in one run. `--globals` is a JSON object that maps each global's name to a value such as `true`, `12`, `"prod"`, or `null` for `nil`. A value written as `{"env": "NAME"}` takes the text of that environment variable, and a `"value"` beside it is used when the variable isn't set.
 
-From a Lute script, `CodeQuality.build` runs every step above in order. It runs `injectGlobalValue` only when `globals` is given, and takes the same shape as `--globals`:
+From a Lute script that requires CodeQuality as in [Use](#use), `CodeQuality.build` runs every step above in order. It runs `injectGlobalValue` only when `globals` is given, and takes the same shape as `--globals`:
 
 ```luau
-local CodeQuality = require("@code-quality")
-
 -- Copy src to dist and write sourcemap.json first, as above.
 CodeQuality.build({
 	sourceFolder = "src",
@@ -266,32 +264,10 @@ The output means the same as darklua's, but it isn't the same text. Darklua repr
 - When a removed statement or a moved block would leave a statement that opens with `(` right after another one, the mods keep them apart with `;` or `do ... end`. Luau would otherwise read the `(` as a call on the line before.
 - A plain copy keeps every file in `src`. Darklua writes only Luau files and turns JSON, TOML, and YAML files into Luau modules, so prune anything the build shouldn't ship. No mod converts those files, since Rojo already syncs a plain `.json` file as a ModuleScript.
 
-## Development
+## Contributing
 
-Install the toolchain with [Rokit](https://github.com/rojo-rbx/rokit), then fetch the Lute typedefs:
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-```sh
-rokit install
-lute setup
-```
+## License
 
-Every pull request adds a change entry in `.changes/`, which [Changewrite](https://github.com/flipbook-labs/changewrite) turns into the changelog and the next version. [`.changes/README.md`](.changes/README.md) explains the format.
-
-Run the checks:
-
-```sh
-lute run lint
-lute run analyze
-lute test
-```
-
-Each rule lives in `src/rules/lints` or `src/rules/style` with a spec beside it that runs the rule over snippets of source. `lute lint --rules` loads every file in the folder it's given, including the files in its subfolders, and skips the ones that don't return a rule, so the specs ship with the rules and load in any repo that runs them. Keep their requires relative, since a repo alias like `@repo` won't resolve there. Shared helpers go in `src/lib`.
-
-### Adding a rule
-
-1. Add `src/rules/lints/<ruleName>.luau` for a lint that catches likely bugs, or `src/rules/style/<ruleName>.luau` for house style. It returns a frozen `types.LintRule` from `src/types.luau`: a `name` in snake case and a `lint` function that takes the parsed file and returns its violations. Find nodes with `@std/syntax/query` and match them with the `is*` helpers in `@std/syntax/utils`, as the existing rules do. Write against the typedefs for the pinned Lute version in `~/.lute/typedefs`.
-2. Add `<ruleName>.spec.luau` beside it. Run snippets through `src/lib/lintSource.luau` and assert on the violations. Cover the code the rule flags and the nearby code it leaves alone.
-3. If the rule reports inside a table type, report at `getReportLocation`'s location instead, and add a case to `src/lib/getReportLocation.lute.spec.luau`. Its comment explains why.
-4. Add a row to its folder's table above, and a change entry in `.changes/`.
-
-A code mod follows the same pattern in `src/mods`. It returns a frozen table with a `transform` function, which takes the file's parse result and returns replacements for the nodes it rewrites. Its spec runs snippets through `src/lib/transformSource.luau` and compares the rewritten source. A mod can also declare `options`, which `lute transform` reads from the arguments after `--`, and an `initialize` function that runs once before the first file. `transformSource` takes the options and the file's path as extra arguments and runs `initialize` the same way. When a mod fixes what a rule flags, share the matching code through `src/lib`, as `stringMethodCall` does with `getStringMethodName`.
+MIT.
