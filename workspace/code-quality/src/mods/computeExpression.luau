@@ -1,28 +1,30 @@
--- Replaces expressions whose value is known before the program runs with that
--- value, replacing darklua's `compute_expression` rule. `2 * 60 * 1000`
--- becomes `120000`, and `"prod" == "development"` becomes `false`.
---
--- As in darklua, only unary, binary, and `if` expressions are folded into a
--- literal, and only when they have no side effects and their value is known
--- from the literals in them. `and` and `or`
--- also fold when their left side is known, keeping the side that decides the
--- result: `true and value` becomes `value`, and `nil or value` becomes
--- `value`.
---
--- This differs from darklua in a few places, none of which change what the
--- code does:
---
--- - Numbers are written the way `tostring` writes them, so `-1000` stays
---   `-1000` where darklua writes `-1E3`. Infinity and NaN are written as
---   `(1/0)` and `(0/0)`.
--- - Arithmetic and string conversion run on Luau's own operators, so `0.1 + 0.2`
---   folds to exactly the number Luau would compute. Darklua compares numbers
---   within a small tolerance and formats them with Rust.
--- - When `and` or `or` keeps a call or `...`, the call gets parentheses.
---   `return true and f()` returns one value, and darklua's `return f()`
---   would return all of them.
---
--- Run it with `lute transform <package>/src/mods/computeExpression.luau <files>`.
+--[[
+	Replaces expressions whose value is known before the program runs with that
+	value, replacing darklua's `compute_expression` rule. `2 * 60 * 1000`
+	becomes `120000`, and `"prod" == "development"` becomes `false`.
+
+	As in darklua, only unary, binary, and `if` expressions are folded into a
+	literal, and only when they have no side effects and their value is known
+	from the literals in them. `and` and `or`
+	also fold when their left side is known, keeping the side that decides the
+	result: `true and value` becomes `value`, and `nil or value` becomes
+	`value`.
+
+	This differs from darklua in a few places, none of which change what the
+	code does:
+
+	- Numbers are written the way `tostring` writes them, so `-1000` stays
+	  `-1000` where darklua writes `-1E3`. Infinity and NaN are written as
+	  `(1/0)` and `(0/0)`.
+	- Arithmetic and string conversion run on Luau's own operators, so `0.1 + 0.2`
+	  folds to exactly the number Luau would compute. Darklua compares numbers
+	  within a small tolerance and formats them with Rust.
+	- When `and` or `or` keeps a call or `...`, the call gets parentheses.
+	  `return true and f()` returns one value, and darklua's `return f()`
+	  would return all of them.
+
+	Run it with `lute transform <package>/src/mods/computeExpression.luau <files>`.
+]]
 
 local syntax = require("@std/syntax")
 local syntaxTypes = require("@std/syntax/types")

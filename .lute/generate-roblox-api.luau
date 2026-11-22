@@ -1,17 +1,19 @@
--- Regenerates workspace/code-quality/src/generated/robloxApiData.luau, the
--- Roblox deprecations the `deprecated` rule checks. Run it with
--- `lute run generate-roblox-api`.
---
--- Roblox's API dump for the current Studio build decides what's deprecated: an
--- enum, member, or enum item tagged `Deprecated`, or an enum item's legacy
--- name. The dump is public, so no account or API key is needed, and it's the
--- same data Selene builds its Roblox standard library from.
---
--- The dump doesn't say why something is deprecated. So a message comes from
--- the class or enum's YAML page in Roblox's creator-docs repository, under
--- `DOCS_URL`, with a generic message when the page has none. A legacy name
--- always gets the same fixed message, and its suggested replacement is the
--- item's current name.
+--[[
+	Regenerates workspace/code-quality/src/generated/robloxApiData.luau, the
+	Roblox deprecations the `deprecated` rule checks. Run it with
+	`lute run generate-roblox-api`.
+
+	Roblox's API dump for the current Studio build decides what's deprecated: an
+	enum, member, or enum item tagged `Deprecated`, or an enum item's legacy
+	name. The dump is public, so no account or API key is needed, and it's the
+	same data Selene builds its Roblox standard library from.
+
+	The dump doesn't say why something is deprecated. So a message comes from
+	the class or enum's YAML page in Roblox's creator-docs repository, under
+	`DOCS_URL`, with a generic message when the page has none. A legacy name
+	always gets the same fixed message, and its suggested replacement is the
+	item's current name.
+]]
 
 local fs = require("@std/fs")
 local json = require("@std/json")

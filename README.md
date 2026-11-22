@@ -158,6 +158,7 @@ These Selene lints have no rule here:
 | `no_paren_truncation`       | A local that captures a call's first return value instead of `(f())`                               |
 | `no_tonumber_cast`          | A `nil` check on `tonumber`'s result instead of a cast like `tonumber(s) :: number`                |
 | `prefer_annotation`         | `local items: { Item } = {}` instead of `local items = {} :: { Item }`                             |
+| `prefer_block_comment`      | One `--[[ ]]` block instead of a run of four or more `--` lines                                    |
 | `prefer_generic_iteration`  | `for k, v in t` instead of `pairs(t)` or `ipairs(t)`                                               |
 | `redundant_path_conversion` | `fs.exists(file)` instead of `fs.exists(tostring(file))` when `file` is visibly a `Path`           |
 | `string_method_call`        | `value:find(...)` instead of `string.find(value, ...)`                                             |
@@ -166,7 +167,9 @@ These Selene lints have no rule here:
 
 Casting a table to `{ unknown }` or `{ any }`, as React dependency arrays often do, widens it rather than setting a type parameter, so `explicit_instantiation` allows it. `explicit_instantiation` also flags a cast on the result of a call whose only argument is a table constructor. It asks for `table.freeze<<Metrics>>({ ... })` instead of `table.freeze({ ... }) :: Metrics`. It needs StyLua's `syntax = "Luau"` setting, since StyLua can't parse `f<<T>>()` without it.
 
-`no_any`, `redundant_path_conversion`, and `tostring_in_interpolation` come with fixes that `lute lint --auto-fix` applies.
+`no_any`, `prefer_block_comment`, `redundant_path_conversion`, and `tostring_in_interpolation` come with fixes that `lute lint --auto-fix` applies.
+
+`prefer_block_comment` counts only lines with text, so a bare `--` between paragraphs doesn't count. Its `line_threshold` option sets how many lines of text flag a run, and defaults to `4`. Directives stay as `--` lines and split a run: `--!` lines, `---` doc comments, and `lute-lint-ignore`, `selene:`, and `stylua:` comments. A comment after a file's last statement isn't checked, since Lute doesn't pass it to rules.
 
 A Lute script can name a rule with `CodeQuality.Rule`, such as `CodeQuality.Rule.NoAny` for `no_any`.
 

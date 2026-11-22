@@ -1,7 +1,9 @@
--- Structural equality for Luau CST nodes, ignoring trivia (whitespace and
--- comments) and source positions. Two nodes are similar when they hold the same
--- tokens in the same shape, so `print( x )` and `print(x)` match, while
--- `'a'` and `"a"` do not.
+--[[
+	Structural equality for Luau CST nodes, ignoring trivia (whitespace and
+	comments) and source positions. Two nodes are similar when they hold the same
+	tokens in the same shape, so `print( x )` and `print(x)` match, while
+	`'a'` and `"a"` do not.
+]]
 
 -- Keys that hold positions, trivia, or name resolution rather than syntax.
 -- Resolution is skipped so two `x` reads match by name, as Selene compares them.

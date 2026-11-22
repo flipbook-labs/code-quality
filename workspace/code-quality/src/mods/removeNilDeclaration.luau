@@ -1,24 +1,26 @@
--- Removes `nil` from local declarations, so `local name = nil` becomes
--- `local name`, replacing darklua's `remove_nil_declaration` rule. A local
--- starts as `nil` anyway, so the value adds nothing.
---
--- In a declaration with several names, the names that took `nil` move to the
--- end, as darklua does: `local a, b = nil, 1` becomes `local b, a = 1`. When
--- the last value left is a call or `...`, it gets parentheses, so it still
--- sets one name instead of handing its extra values to the names after it.
--- Like darklua, this also drops values past the last name that have no side
--- effects, as in `local a = 1, 2`.
---
--- A declaration is left alone when moving names could change what it means.
--- That's when it has fewer values than names and the last one is a call or
--- `...`, which fills the rest, or when it declares the same name twice, where
--- the later one wins. Darklua reorders the second case anyway. `const`
--- declarations are left alone, as in darklua.
---
--- A declaration that changes is written out again on one line, so comments
--- between its names and values are lost. Comments before and after it stay.
---
--- Run it with `lute transform <package>/src/mods/removeNilDeclaration.luau <files>`.
+--[[
+	Removes `nil` from local declarations, so `local name = nil` becomes
+	`local name`, replacing darklua's `remove_nil_declaration` rule. A local
+	starts as `nil` anyway, so the value adds nothing.
+
+	In a declaration with several names, the names that took `nil` move to the
+	end, as darklua does: `local a, b = nil, 1` becomes `local b, a = 1`. When
+	the last value left is a call or `...`, it gets parentheses, so it still
+	sets one name instead of handing its extra values to the names after it.
+	Like darklua, this also drops values past the last name that have no side
+	effects, as in `local a = 1, 2`.
+
+	A declaration is left alone when moving names could change what it means.
+	That's when it has fewer values than names and the last one is a call or
+	`...`, which fills the rest, or when it declares the same name twice, where
+	the later one wins. Darklua reorders the second case anyway. `const`
+	declarations are left alone, as in darklua.
+
+	A declaration that changes is written out again on one line, so comments
+	between its names and values are lost. Comments before and after it stay.
+
+	Run it with `lute transform <package>/src/mods/removeNilDeclaration.luau <files>`.
+]]
 
 local query = require("@std/syntax/query")
 local syntax = require("@std/syntax")

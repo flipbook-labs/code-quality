@@ -28,11 +28,13 @@ local function getStringLiterals(union: syntax.CstTypeUnion): { [string]: true }
 	return literals
 end
 
--- The string values of a frozen table of named constants, as in
--- `table.freeze({ Home = "Home" })`. A name that isn't a valid identifier can
--- be written as a string key, as in `["home-screen"] = "Home"`. A value may
--- carry a singleton cast, as in `Home = "Home" :: "Home"`, which keeps its
--- literal type.
+--[[
+	The string values of a frozen table of named constants, as in
+	`table.freeze({ Home = "Home" })`. A name that isn't a valid identifier can
+	be written as a string key, as in `["home-screen"] = "Home"`. A value may
+	carry a singleton cast, as in `Home = "Home" :: "Home"`, which keeps its
+	literal type.
+]]
 local function getFrozenStringValues(call: syntax.CstExprCall): { [string]: true }?
 	local freeze = utils.isExprIndexName(call.func)
 	if not freeze or freeze.accessor.text ~= "." or freeze.index.text ~= "freeze" then

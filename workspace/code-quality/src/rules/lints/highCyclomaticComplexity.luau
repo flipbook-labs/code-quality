@@ -16,12 +16,14 @@ local DEFAULT_MAXIMUM_COMPLEXITY = 40
 local countBlock: (block: syntax.CstStatBlock, complexity: number) -> number
 local countExpr: (expr: syntax.CstExpr, complexity: number) -> number
 
--- Counts a call, index, or instance chain such as `a.b(x)[k]:c()`. Each
--- argument and bracketed key adds to the count. The base of the chain counts
--- only when the chain ends in a call, as Selene does for a function call. For a
--- plain variable chain, Selene skips the base, so `(a and b).c` adds nothing.
--- The expression a chain link is applied to, or nil when the link isn't part
--- of a chain.
+--[[
+	Counts a call, index, or instance chain such as `a.b(x)[k]:c()`. Each
+	argument and bracketed key adds to the count. The base of the chain counts
+	only when the chain ends in a call, as Selene does for a function call. For a
+	plain variable chain, Selene skips the base, so `(a and b).c` adds nothing.
+	The expression a chain link is applied to, or nil when the link isn't part
+	of a chain.
+]]
 local function chainBase(node: syntax.CstExpr): syntax.CstExpr?
 	if node.tag == "call" then
 		return node.func

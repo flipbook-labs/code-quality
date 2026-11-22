@@ -1,15 +1,17 @@
--- Removes statements that can never run because a `do ... end` block before
--- them always returns, replacing darklua's `filter_after_early_return` rule.
--- Luau only allows `return` as the last statement of a block, so code that
--- returns early is written `do return end`. `removeUnusedIfBranch` also leaves
--- that shape behind when it turns `if true then return end` into a block.
---
--- As in darklua, only `do` blocks count. A block always returns when its last
--- statement is a `return`. One that ends in some other statement, but not in
--- `break` or `continue`, also counts when it holds a `do` block that always
--- returns. An `if` that returns from every branch doesn't count.
---
--- Run it with `lute transform <package>/src/mods/filterAfterEarlyReturn.luau <files>`.
+--[[
+	Removes statements that can never run because a `do ... end` block before
+	them always returns, replacing darklua's `filter_after_early_return` rule.
+	Luau only allows `return` as the last statement of a block, so code that
+	returns early is written `do return end`. `removeUnusedIfBranch` also leaves
+	that shape behind when it turns `if true then return end` into a block.
+
+	As in darklua, only `do` blocks count. A block always returns when its last
+	statement is a `return`. One that ends in some other statement, but not in
+	`break` or `continue`, also counts when it holds a `do` block that always
+	returns. An `if` that returns from every branch doesn't count.
+
+	Run it with `lute transform <package>/src/mods/filterAfterEarlyReturn.luau <files>`.
+]]
 
 local query = require("@std/syntax/query")
 local syntax = require("@std/syntax")

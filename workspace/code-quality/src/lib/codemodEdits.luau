@@ -1,12 +1,14 @@
--- Edits that the darklua replacement code mods share: deleting statements,
--- printing a node without the whitespace around it, and turning a block into
--- text that can stand in for the statement that held it.
---
--- A code mod returns replacements, a map from a node to the text that takes
--- its place. By default the printer keeps the whitespace and comments around
--- a replaced node. In Lute's CST, a token's trailing trivia runs to the end of
--- its line, and the next line's indentation is leading trivia of the token
--- that starts it.
+--[[
+	Edits that the darklua replacement code mods share: deleting statements,
+	printing a node without the whitespace around it, and turning a block into
+	text that can stand in for the statement that held it.
+
+	A code mod returns replacements, a map from a node to the text that takes
+	its place. By default the printer keeps the whitespace and comments around
+	a replaced node. In Lute's CST, a token's trailing trivia runs to the end of
+	its line, and the next line's indentation is leading trivia of the token
+	that starts it.
+]]
 
 local printer = require("@std/syntax/printer")
 local query = require("@std/syntax/query")
@@ -77,11 +79,13 @@ local function startsWithParen(statement: syntax.CstStat?): boolean
 	return statement ~= nil and firstTokenText(statement) == "("
 end
 
--- Deletes the statement at `index` in `block`. When the statement after it
--- opens with `(` and another statement comes before it, a `;` is left in its
--- place, so the two statements around it stay apart. The first statement in
--- a block follows a keyword like `then` or `do`, which Luau doesn't read as
--- something to call, so it needs no `;`.
+--[[
+	Deletes the statement at `index` in `block`. When the statement after it
+	opens with `(` and another statement comes before it, a `;` is left in its
+	place, so the two statements around it stay apart. The first statement in
+	a block follows a keyword like `then` or `do`, which Luau doesn't read as
+	something to call, so it needs no `;`.
+]]
 local function deleteStatement(block: syntax.CstStatBlock, index: number, replacements: syntaxTypes.Replacements)
 	local statement = block.statements[index]
 	local nextStatement = block.statements[index + 1]
@@ -118,17 +122,19 @@ local function endsBlock(block: syntax.CstStatBlock): boolean
 	return last ~= nil and (utils.isStatReturn(last) or utils.isStatBreak(last) or utils.isStatContinue(last)) ~= nil
 end
 
--- Returns text that runs `block` in place of the statement that held it, or
--- nil when the block is empty. `opener` is the token just before the block,
--- like `then` or `else`, and `closer` the `end` after it. `nextStatement` is
--- the statement that follows the one being replaced, if any.
---
--- The statements are moved into the enclosing block as they are when that's
--- safe. They're wrapped in `do ... end` when the block declares names, which
--- would otherwise outlive it, or ends in `return`, `break`, or `continue`.
--- They're also wrapped when the block's first statement, or the statement
--- after it, opens with `(`, which Luau could read as a call on the line
--- before.
+--[[
+	Returns text that runs `block` in place of the statement that held it, or
+	nil when the block is empty. `opener` is the token just before the block,
+	like `then` or `else`, and `closer` the `end` after it. `nextStatement` is
+	the statement that follows the one being replaced, if any.
+
+	The statements are moved into the enclosing block as they are when that's
+	safe. They're wrapped in `do ... end` when the block declares names, which
+	would otherwise outlive it, or ends in `return`, `break`, or `continue`.
+	They're also wrapped when the block's first statement, or the statement
+	after it, opens with `(`, which Luau could read as a call on the line
+	before.
+]]
 local function blockAsStatement(
 	block: syntax.CstStatBlock,
 	opener: syntax.CstToken,
@@ -156,16 +162,18 @@ local function positionKey(location: syntax.Span): string
 	return `{location.beginLine}:{location.beginColumn}`
 end
 
--- The places in a file where a literal can't simply take an expression's
--- spot, each keyed by the expression's position:
---
--- - `afterMinus` holds the expressions right after a `-` with no space
---   between, as in `a -b` or `-x`. A negative number there would make `--`,
---   which starts a comment.
--- - `beforeConcat` holds the left sides of a `..` with no space between, as
---   in `x..y`. A number there would read as a malformed number, like `1..y`.
--- - `powerBase` holds the left sides of `^`. Luau reads `-5 ^ 2` as
---   `-(5 ^ 2)`, so a negative number there needs parentheses.
+--[[
+	The places in a file where a literal can't simply take an expression's
+	spot, each keyed by the expression's position:
+
+	- `afterMinus` holds the expressions right after a `-` with no space
+	  between, as in `a -b` or `-x`. A negative number there would make `--`,
+	  which starts a comment.
+	- `beforeConcat` holds the left sides of a `..` with no space between, as
+	  in `x..y`. A number there would read as a malformed number, like `1..y`.
+	- `powerBase` holds the left sides of `^`. Luau reads `-5 ^ 2` as
+	  `-(5 ^ 2)`, so a negative number there needs parentheses.
+]]
 export type OperandContexts = {
 	afterMinus: { [string]: true },
 	beforeConcat: { [string]: true },
@@ -202,10 +210,12 @@ local function findOperandContexts(parseresult: syntax.CstParseResult): OperandC
 	return contexts
 end
 
--- Adjusts replacement text for `node` so it reads the same where `node`
--- stood: parentheses around a negative number that's raised to a power, a
--- space after a number that a `..` follows, and a space before a negative
--- number that follows a `-`.
+--[[
+	Adjusts replacement text for `node` so it reads the same where `node`
+	stood: parentheses around a negative number that's raised to a power, a
+	space after a number that a `..` follows, and a space before a negative
+	number that follows a `-`.
+]]
 local function fitReplacement(node: syntax.CstExpr, text: string, contexts: OperandContexts): string
 	local key = positionKey(node.location)
 	local negative = text:sub(1, 1) == "-"
@@ -222,11 +232,13 @@ local function fitReplacement(node: syntax.CstExpr, text: string, contexts: Oper
 	return text
 end
 
--- Whether `expr` can take the place of any other expression as it is, without
--- parentheses: a literal, a name, an index, a function, a table, or something
--- already in parentheses. A binary or unary expression, a cast, or an `if`
--- expression could bind differently to the operators around it. A call or
--- `...` could pass along more than one value.
+--[[
+	Whether `expr` can take the place of any other expression as it is, without
+	parentheses: a literal, a name, an index, a function, a table, or something
+	already in parentheses. A binary or unary expression, a cast, or an `if`
+	expression could bind differently to the operators around it. A call or
+	`...` could pass along more than one value.
+]]
 local function isAtom(expr: syntax.CstExpr): boolean
 	return expr.tag == "nil"
 		or expr.tag == "boolean"

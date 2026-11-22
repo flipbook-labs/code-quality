@@ -14,10 +14,12 @@ local function isAtOrBefore(lineA: number, columnA: number, lineB: number, colum
 	return lineA < lineB or (lineA == lineB and columnA <= columnB)
 end
 
--- Whether `comment` sits in the loop's body, between `do` and `end`, or between
--- `repeat` and `until`. Selene counts a comment anywhere in the loop, so a
--- comment in the header, as in `while --[[ready?]] ready do end`, hid an empty
--- body there.
+--[=[
+	Whether `comment` sits in the loop's body, between `do` and `end`, or between
+	`repeat` and `until`. Selene counts a comment anywhere in the loop, so a
+	comment in the header, as in `while --[[ready?]] ready do end`, hid an empty
+	body there.
+]=]
 local function isInBody(loop: Loop, comment: syntax.Span): boolean
 	local opener = if loop.tag == "repeat" then loop.repeatKeyword else loop.doKeyword
 	local closer = if loop.tag == "repeat" then loop.untilKeyword else loop.endKeyword

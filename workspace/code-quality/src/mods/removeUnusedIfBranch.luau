@@ -1,39 +1,41 @@
--- Removes `if` branches that can never run and the conditions that always
--- pass, replacing darklua's `remove_unused_if_branch` rule. The mod
--- evaluates each condition itself, so a build check like
--- `"prod" == "development"` counts as always false without running
--- `computeExpression` first. Run `injectGlobalValue` first, so build globals
--- in conditions have values.
---
--- For an `if` statement whose conditions have no side effects:
---
--- - A branch whose condition is always false is removed.
--- - A branch whose condition is always true becomes the `else`, and every
---   branch after it is removed.
--- - When no branch is left, the block that runs replaces the whole statement,
---   and an `if` with no block left to run is removed.
--- - An empty `else` is removed.
---
--- An `if` expression works the same way. When only one result is left, it
--- replaces the expression, in parentheses unless it's a name, a literal, or
--- something else that reads the same anywhere.
---
--- A condition with side effects stays even when its value is known, so the
--- side effect still happens. Its branch is emptied when the condition is
--- always false, and the branches after it are removed when it's always true.
--- In an `if` expression, an emptied branch's result becomes `nil`. Darklua
--- does the same.
---
--- Darklua always wraps a block that replaces its `if` in `do ... end`. This
--- mod moves the block's statements into the enclosing block instead when
--- that's safe, and only wraps them when the block declares locals or types,
--- ends in `return`, `break`, or `continue`, or opens with `(`, or when the
--- statement after the `if` opens with `(`. Moved statements keep their
--- original indentation, so run a formatter if the output is meant to be read.
--- A branch written `if local x = f() then` is always kept, since its
--- condition declares a local.
---
--- Run it with `lute transform <package>/src/mods/removeUnusedIfBranch.luau <files>`.
+--[[
+	Removes `if` branches that can never run and the conditions that always
+	pass, replacing darklua's `remove_unused_if_branch` rule. The mod
+	evaluates each condition itself, so a build check like
+	`"prod" == "development"` counts as always false without running
+	`computeExpression` first. Run `injectGlobalValue` first, so build globals
+	in conditions have values.
+
+	For an `if` statement whose conditions have no side effects:
+
+	- A branch whose condition is always false is removed.
+	- A branch whose condition is always true becomes the `else`, and every
+	  branch after it is removed.
+	- When no branch is left, the block that runs replaces the whole statement,
+	  and an `if` with no block left to run is removed.
+	- An empty `else` is removed.
+
+	An `if` expression works the same way. When only one result is left, it
+	replaces the expression, in parentheses unless it's a name, a literal, or
+	something else that reads the same anywhere.
+
+	A condition with side effects stays even when its value is known, so the
+	side effect still happens. Its branch is emptied when the condition is
+	always false, and the branches after it are removed when it's always true.
+	In an `if` expression, an emptied branch's result becomes `nil`. Darklua
+	does the same.
+
+	Darklua always wraps a block that replaces its `if` in `do ... end`. This
+	mod moves the block's statements into the enclosing block instead when
+	that's safe, and only wraps them when the block declares locals or types,
+	ends in `return`, `break`, or `continue`, or opens with `(`, or when the
+	statement after the `if` opens with `(`. Moved statements keep their
+	original indentation, so run a formatter if the output is meant to be read.
+	A branch written `if local x = f() then` is always kept, since its
+	condition declares a local.
+
+	Run it with `lute transform <package>/src/mods/removeUnusedIfBranch.luau <files>`.
+]]
 
 local query = require("@std/syntax/query")
 local syntax = require("@std/syntax")

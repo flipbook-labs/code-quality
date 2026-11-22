@@ -8,12 +8,14 @@ local function text(expr: syntax.CstExpr): string
 	return printer.printNode(expr):match("^%s*(.-)%s*$") or ""
 end
 
--- The number that `expr` spells, for the decimal forms Rust's `f32` parser
--- accepts: an optional sign, digits with an optional fraction, and an optional
--- exponent. Hex, binary, underscores, and `inf` or `nan` give nil. Selene reads
--- `inf` and `nan` as numbers because Rust does, but in Luau they're just names.
--- Values are compared as f64 here, not f32, so a value that rounds to a bound
--- in f32 (like `1.00000001`) can differ from Selene.
+--[[
+	The number that `expr` spells, for the decimal forms Rust's `f32` parser
+	accepts: an optional sign, digits with an optional fraction, and an optional
+	exponent. Hex, binary, underscores, and `inf` or `nan` give nil. Selene reads
+	`inf` and `nan` as numbers because Rust does, but in Luau they're just names.
+	Values are compared as f64 here, not f32, so a value that rounds to a bound
+	in f32 (like `1.00000001`) can differ from Selene.
+]]
 local function decimal(expr: syntax.CstExpr): number?
 	local source = text(expr)
 	local negative = source:sub(1, 1) == "-"

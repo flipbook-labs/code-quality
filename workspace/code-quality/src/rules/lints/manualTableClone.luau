@@ -48,12 +48,14 @@ local function globalName(expr: syntax.CstExpr): string?
 	return if global then global.name.text else nil
 end
 
--- The iterable a loop copies from: `pairs(t)`, `ipairs(t)`, `next, t`, or a
--- plain `t`. Returns nil for other loop heads, such as `for k, v in a, pairs(b)`.
---
--- Selene also treats a loop over any other call as copying the call's result.
--- That call might return an iterator, as `string.gmatch` does, and then
--- `table.clone` would throw, so this rule leaves those loops alone.
+--[[
+	The iterable a loop copies from: `pairs(t)`, `ipairs(t)`, `next, t`, or a
+	plain `t`. Returns nil for other loop heads, such as `for k, v in a, pairs(b)`.
+
+	Selene also treats a loop over any other call as copying the call's result.
+	That call might return an iterator, as `string.gmatch` does, and then
+	`table.clone` would throw, so this rule leaves those loops alone.
+]]
 local function loopSource(values: Items<syntax.CstExpr>): LoopSource?
 	if #values == 1 then
 		local value = firstItem(values)

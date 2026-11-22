@@ -8,16 +8,18 @@ local unwrapGroups = require("../../lib/unwrapGroups")
 
 local NAME = "no_paren_truncation"
 
--- Parentheses around a call keep only its first return value, as in
--- `return (text:gsub("%s", ""))`. That's easy to read as decoration, and
--- removing the parentheses quietly passes the extra values along. A local that
--- captures the first value says the same thing plainly.
---
--- Only the last expression in a list can pass along more than one value: the
--- last argument of a call, the last value returned, the last entry of a table
--- list, or the last value assigned to more variables than there are values.
--- Anywhere else, as in `local value = (f())` or `if (f()) then`, the call is
--- already cut to one value and the parentheses change nothing.
+--[[
+	Parentheses around a call keep only its first return value, as in
+	`return (text:gsub("%s", ""))`. That's easy to read as decoration, and
+	removing the parentheses quietly passes the extra values along. A local that
+	captures the first value says the same thing plainly.
+
+	Only the last expression in a list can pass along more than one value: the
+	last argument of a call, the last value returned, the last entry of a table
+	list, or the last value assigned to more variables than there are values.
+	Anywhere else, as in `local value = (f())` or `if (f()) then`, the call is
+	already cut to one value and the parentheses change nothing.
+]]
 local function collectMultiValueExprs(cst: syntax.CstStatBlock): { [syntax.CstExpr]: true }
 	local exprs: { [syntax.CstExpr]: true } = {}
 	local function markLast(list: { syntax.CstExpr })

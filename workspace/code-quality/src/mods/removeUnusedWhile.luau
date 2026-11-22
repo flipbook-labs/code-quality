@@ -1,16 +1,18 @@
--- Removes `while` loops whose condition is always false, like
--- `while false do ... end`, replacing darklua's `remove_unused_while` rule.
--- The condition's value must be known and it must have no side effects, the
--- same test darklua uses, so the loop never runs and nothing is lost by
--- removing it. The mod evaluates conditions itself, so `"prod" == "dev"` and
--- `false and f()` both count. Run `injectGlobalValue` first, so build globals
--- in conditions have values.
---
--- When the statement after a removed loop opens with `(` and another
--- statement comes before the loop, this leaves a `;` in the loop's place, so
--- Luau doesn't read that `(` as a call on the line before.
---
--- Run it with `lute transform <package>/src/mods/removeUnusedWhile.luau <files>`.
+--[[
+	Removes `while` loops whose condition is always false, like
+	`while false do ... end`, replacing darklua's `remove_unused_while` rule.
+	The condition's value must be known and it must have no side effects, the
+	same test darklua uses, so the loop never runs and nothing is lost by
+	removing it. The mod evaluates conditions itself, so `"prod" == "dev"` and
+	`false and f()` both count. Run `injectGlobalValue` first, so build globals
+	in conditions have values.
+
+	When the statement after a removed loop opens with `(` and another
+	statement comes before the loop, this leaves a `;` in the loop's place, so
+	Luau doesn't read that `(` as a call on the line before.
+
+	Run it with `lute transform <package>/src/mods/removeUnusedWhile.luau <files>`.
+]]
 
 local query = require("@std/syntax/query")
 local syntaxTypes = require("@std/syntax/types")

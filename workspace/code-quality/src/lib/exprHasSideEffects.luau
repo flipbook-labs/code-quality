@@ -1,9 +1,11 @@
 local syntax = require("@std/syntax")
 
--- Whether evaluating `expr` could have side effects, following Selene's rules.
--- Calls always count. Indexing is judged by what it indexes, not by the key:
--- Selene does not look inside `t[f()]`, so that case is treated as safe here
--- too, to keep the same results.
+--[[
+	Whether evaluating `expr` could have side effects, following Selene's rules.
+	Calls always count. Indexing is judged by what it indexes, not by the key:
+	Selene does not look inside `t[f()]`, so that case is treated as safe here
+	too, to keep the same results.
+]]
 local function exprHasSideEffects(expr: syntax.CstExpr): boolean
 	if expr.tag == "group" or expr.tag == "indexname" or expr.tag == "index" then
 		return exprHasSideEffects(expr.expression)

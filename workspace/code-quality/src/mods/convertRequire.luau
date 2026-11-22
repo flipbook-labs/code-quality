@@ -1,56 +1,58 @@
--- Rewrites Luau string requires, such as `require("@pkg/React")` or
--- `require("./Foo")`, into the instance requires Roblox runs, like
--- `require(script.Parent.Packages.React)`. It replaces darklua's
--- `convert_require` rule with a Roblox target and property indexing.
---
--- A require is resolved the way Luau resolves it on disk. Relative paths and
--- `@self` start from the requiring file, and other aliases come from the
--- nearest `.config.luau` or `.luaurc` above it that defines them. Aliases that
--- point into the home folder (`~`), like Lute's `@std`, aren't read, since
--- that code never reaches Roblox, so a require through one stops with an
--- error. A Rojo sourcemap then says which instance each file
--- becomes, and the require walks from the requiring file's instance to that
--- one.
---
--- Some packages are written against the instance tree rather than the files
--- on disk. Wally, for one, puts a package's dependencies beside it as link
--- modules, so react-charm's `require("./Charm")` names a sibling instance that
--- has no file next to the package's source. When a `./` or `../` require
--- finds no file or folder on disk, the mod reads it against the instance tree
--- instead, the way Roblox would: `./` starts from the requiring script's
--- parent, and each `../` goes up one more. The instance it lands on has to be
--- in the sourcemap.
---
--- It takes four options:
---
--- - `sourcemap`, the path to a sourcemap from `rojo sourcemap`. It defaults to
---   `sourcemap.json`. As in darklua, the file paths inside it are relative to
---   the sourcemap's own folder.
--- - `sourceFolder` and `buildFolder`, for a build that copies the source
---   folder and rewrites the copy. A file under `buildFolder` is resolved as
---   the file at the same place under `sourceFolder`, which is what the
---   sourcemap and the alias configs describe. Leave both out to resolve
---   files where they are.
--- - `ignore`, a comma-separated list of require strings to leave as they
---   are, for requires that only resolve at runtime. An entry ending in `*`
---   matches every require string that starts with the text before it, so
---   `@std/*,./generated/*` skips Lute's standard library and one folder.
---
--- Relative option paths start from the folder `lute transform` runs in. For
--- example, after copying `src` to `dist`:
---
--- ```sh
--- lute transform <package>/src/mods/convertRequire.luau dist -- --sourcemap sourcemap-darklua.json --sourceFolder src --buildFolder dist
--- ```
---
--- Darklua logs a warning and leaves a require alone when it can't resolve it.
--- This mod stops with an error instead, so a build can't ship a require that
--- won't load. List the requires a build expects to leave alone in `ignore`.
---
--- A child whose name isn't a valid identifier, or is a reserved word like
--- `end`, is indexed with `["name"]`, where darklua writes `['name']`.
---
--- Run it with `lute transform <package>/src/mods/convertRequire.luau <files>`.
+--[[
+	Rewrites Luau string requires, such as `require("@pkg/React")` or
+	`require("./Foo")`, into the instance requires Roblox runs, like
+	`require(script.Parent.Packages.React)`. It replaces darklua's
+	`convert_require` rule with a Roblox target and property indexing.
+
+	A require is resolved the way Luau resolves it on disk. Relative paths and
+	`@self` start from the requiring file, and other aliases come from the
+	nearest `.config.luau` or `.luaurc` above it that defines them. Aliases that
+	point into the home folder (`~`), like Lute's `@std`, aren't read, since
+	that code never reaches Roblox, so a require through one stops with an
+	error. A Rojo sourcemap then says which instance each file
+	becomes, and the require walks from the requiring file's instance to that
+	one.
+
+	Some packages are written against the instance tree rather than the files
+	on disk. Wally, for one, puts a package's dependencies beside it as link
+	modules, so react-charm's `require("./Charm")` names a sibling instance that
+	has no file next to the package's source. When a `./` or `../` require
+	finds no file or folder on disk, the mod reads it against the instance tree
+	instead, the way Roblox would: `./` starts from the requiring script's
+	parent, and each `../` goes up one more. The instance it lands on has to be
+	in the sourcemap.
+
+	It takes four options:
+
+	- `sourcemap`, the path to a sourcemap from `rojo sourcemap`. It defaults to
+	  `sourcemap.json`. As in darklua, the file paths inside it are relative to
+	  the sourcemap's own folder.
+	- `sourceFolder` and `buildFolder`, for a build that copies the source
+	  folder and rewrites the copy. A file under `buildFolder` is resolved as
+	  the file at the same place under `sourceFolder`, which is what the
+	  sourcemap and the alias configs describe. Leave both out to resolve
+	  files where they are.
+	- `ignore`, a comma-separated list of require strings to leave as they
+	  are, for requires that only resolve at runtime. An entry ending in `*`
+	  matches every require string that starts with the text before it, so
+	  `@std/*,./generated/*` skips Lute's standard library and one folder.
+
+	Relative option paths start from the folder `lute transform` runs in. For
+	example, after copying `src` to `dist`:
+
+	```sh
+	lute transform <package>/src/mods/convertRequire.luau dist -- --sourcemap sourcemap-darklua.json --sourceFolder src --buildFolder dist
+	```
+
+	Darklua logs a warning and leaves a require alone when it can't resolve it.
+	This mod stops with an error instead, so a build can't ship a require that
+	won't load. List the requires a build expects to leave alone in `ignore`.
+
+	A child whose name isn't a valid identifier, or is a reserved word like
+	`end`, is indexed with `["name"]`, where darklua writes `['name']`.
+
+	Run it with `lute transform <package>/src/mods/convertRequire.luau <files>`.
+]]
 
 local fs = require("@std/fs")
 local json = require("@std/json")
@@ -82,12 +84,14 @@ type LuauConfig = {
 	aliases: { [unknown]: unknown }?,
 }
 
--- Every path below is absolute and uses `/`. `initialize` fills these in
--- once, so each file doesn't read the sourcemap again.
---
--- `moduleByFile` and `instanceByFolder` give an instance path, the names
--- from the sourcemap's root down, for each module file and for each folder a
--- module sits in.
+--[[
+	Every path below is absolute and uses `/`. `initialize` fills these in
+	once, so each file doesn't read the sourcemap again.
+
+	`moduleByFile` and `instanceByFolder` give an instance path, the names
+	from the sourcemap's root down, for each module file and for each folder a
+	module sits in.
+]]
 local moduleByFile: { [string]: { string } } = {}
 local instanceByFolder: { [string]: { string } } = {}
 -- Every instance in the sourcemap, keyed by `instanceKey`, for requires that
@@ -240,12 +244,14 @@ end
 
 -- Returns the file or folder a require string points at, without extension.
 local function resolveRequirePath(requirer: string, requirePath: string): string
-	-- Luau resolves a require from the requiring module's path: the file's
-	-- path without its extension, or for an init file, its folder, since an
-	-- init file stands for the folder. `./` and `../` start from the folder
-	-- that holds the module path, which for an init file is its folder's
-	-- parent. `@self` starts at the module path itself, so an init file
-	-- reaches its own children with it.
+	--[[
+		Luau resolves a require from the requiring module's path: the file's
+		path without its extension, or for an init file, its folder, since an
+		init file stands for the folder. `./` and `../` start from the folder
+		that holds the module path, which for an init file is its folder's
+		parent. `@self` starts at the module path itself, so an init file
+		reaches its own children with it.
+	]]
 	local modulePath = if isInit(requirer) then dirname(requirer) else (requirer:gsub("%.[%w%.]+$", ""))
 
 	local alias, rest = requirePath:match("^@([^/]+)/?(.*)$")

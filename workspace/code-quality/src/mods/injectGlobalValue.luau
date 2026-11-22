@@ -1,35 +1,37 @@
--- Replaces reads of build globals, like `_G.BUILD_CHANNEL`, with their values
--- for this build, replacing darklua's `inject_global_value` rule. Flipbook
--- builds use it to bake values such as the release channel into the plugin.
--- One run sets every global a build needs. Run `computeExpression` and
--- `removeUnusedIfBranch` after it to drop the code a value turns off.
---
--- It takes one option, `globals`, a JSON object that maps each global's name
--- to its value. A value is JSON `null`, a boolean, a number, or a string, and
--- `null` means `nil`. A value can also be an object that reads an
--- environment variable: `{ "env": "NAME" }` uses the variable's text as a
--- string, and an optional `"value"` beside it is used when the variable
--- isn't set.
---
--- For example, this replaces `_G.BUILD_CHANNEL` with the text of the
--- `BUILD_CHANNEL` environment variable, or `"dev"` when it isn't set, and
--- `_G.__DEV__` with `false`:
---
--- ```sh
--- lute transform <package>/src/mods/injectGlobalValue.luau dist -- --globals '{"BUILD_CHANNEL":{"env":"BUILD_CHANNEL","value":"dev"},"__DEV__":false}'
--- ```
---
--- As in darklua, `_G.NAME`, `_G["NAME"]`, and a bare global `NAME` are all
--- replaced, unless a local named `_G` or `NAME` hides the global. An
--- assignment to the global, like `_G.NAME = value`, stays as it is, and so
--- does `_G:NAME()`, which calls a method on `_G` itself. A value used as a
--- prefix, as in
--- `_G.NAME:lower()`, gets parentheses.
---
--- Darklua configures one global per rule entry and takes the default for a
--- missing variable from a separate `default_value` property, where this mod
--- uses `value`. Darklua's `env_json`, which reads JSON from a variable, has
--- no equivalent here.
+--[[
+	Replaces reads of build globals, like `_G.BUILD_CHANNEL`, with their values
+	for this build, replacing darklua's `inject_global_value` rule. Flipbook
+	builds use it to bake values such as the release channel into the plugin.
+	One run sets every global a build needs. Run `computeExpression` and
+	`removeUnusedIfBranch` after it to drop the code a value turns off.
+
+	It takes one option, `globals`, a JSON object that maps each global's name
+	to its value. A value is JSON `null`, a boolean, a number, or a string, and
+	`null` means `nil`. A value can also be an object that reads an
+	environment variable: `{ "env": "NAME" }` uses the variable's text as a
+	string, and an optional `"value"` beside it is used when the variable
+	isn't set.
+
+	For example, this replaces `_G.BUILD_CHANNEL` with the text of the
+	`BUILD_CHANNEL` environment variable, or `"dev"` when it isn't set, and
+	`_G.__DEV__` with `false`:
+
+	```sh
+	lute transform <package>/src/mods/injectGlobalValue.luau dist -- --globals '{"BUILD_CHANNEL":{"env":"BUILD_CHANNEL","value":"dev"},"__DEV__":false}'
+	```
+
+	As in darklua, `_G.NAME`, `_G["NAME"]`, and a bare global `NAME` are all
+	replaced, unless a local named `_G` or `NAME` hides the global. An
+	assignment to the global, like `_G.NAME = value`, stays as it is, and so
+	does `_G:NAME()`, which calls a method on `_G` itself. A value used as a
+	prefix, as in
+	`_G.NAME:lower()`, gets parentheses.
+
+	Darklua configures one global per rule entry and takes the default for a
+	missing variable from a separate `default_value` property, where this mod
+	uses `value`. Darklua's `env_json`, which reads JSON from a variable, has
+	no equivalent here.
+]]
 
 local json = require("@std/json")
 local process = require("@std/process")
