@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 
 
+## v0.8.0
+
+Features 1 · Internal 1
+
+### Features
+
+1. <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/flipbook-labs/code-quality/main/.changes/assets/kind-rules-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/flipbook-labs/code-quality/main/.changes/assets/kind-rules-light.svg"><img src="https://raw.githubusercontent.com/flipbook-labs/code-quality/main/.changes/assets/kind-rules-light.png" alt="Lint rules" height="18" align="texttop"></picture> Add `prefer_block_comment`, which turns runs of four or more `--` lines into one `--[[ ]]` block. ([#58](https://github.com/flipbook-labs/code-quality/pull/58))
+
+<details>
+<summary>Internal (1)</summary>
+
+1. <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/flipbook-labs/code-quality/main/.changes/assets/kind-docs-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/flipbook-labs/code-quality/main/.changes/assets/kind-docs-light.svg"><img src="https://raw.githubusercontent.com/flipbook-labs/code-quality/main/.changes/assets/kind-docs-light.png" alt="Docs" height="18" align="texttop"></picture> Rewrite the README to the org's Package template and move dev setup into CONTRIBUTING.md. ([#55](https://github.com/flipbook-labs/code-quality/pull/55))
+
+</details>
+
+
 ## v0.7.0
 
 Features 1
