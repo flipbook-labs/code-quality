@@ -30,6 +30,13 @@ test.suite("no_constructor_function", function(suite)
 		)
 	end)
 
+	suite:case("leaves a function used as a value alone", function(assert)
+		local exported = "local function create()\n\treturn {}\nend\n\nlocal M = { new = create }\n\nreturn M"
+		assert.eq(#lintSource(rule, exported), 0)
+		local callback = "local function create()\n\treturn {}\nend\n\nlocal value = useMemo(create, {})"
+		assert.eq(#lintSource(rule, callback), 0)
+	end)
+
 	suite:case("leaves a function that does more than return a table alone", function(assert)
 		assert.eq(#lintSource(rule, "local function create(x)\n\tlocal y = x * 2\n\treturn { y = y }\nend"), 0)
 		assert.eq(#lintSource(rule, "local function create(x)\n\treturn { x = x }, x\nend"), 0)

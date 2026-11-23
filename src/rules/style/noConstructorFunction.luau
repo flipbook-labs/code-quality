@@ -22,65 +22,48 @@ local function getReturnedTable(func: syntax.CstExprFunction): syntax.CstExprTab
 end
 
 --[[
-	Collects the locals a module returns, as in `return create` or
-	`return { create = create }`. Those functions are the module's API. A
-	returned call's arguments count too, so `return table.freeze({ create =
-	create })` exports `create`.
+	Collects the locals the file uses as values rather than only calling them,
+	as in `return create`, `{ new = create }`, or `useMemo(create, {})`. A
+	function used that way is needed as a function, so writing its table in
+	place isn't an option.
 ]]
-local function collectExports(cst: syntax.CstStatBlock): { [syntax.CstLocal]: true }
-	local exports: { [syntax.CstLocal]: true } = {}
-	local last = cst.statements[#cst.statements]
-	local statement = if last then utils.isStatReturn(last) else nil
-	if statement == nil then
-		return exports
-	end
+local function collectValueUses(cst: syntax.CstStatBlock): { [syntax.CstLocal]: true }
+	local callees: { [syntax.CstExprLocal]: true } = {}
+	query.findAllFromRoot(cst, utils.isExprCall):forEach(function(call)
+		local callee = utils.isExprLocal(call.func)
+		if callee then
+			callees[callee] = true
+		end
+	end)
 
-	local expressions: { syntax.CstExpr } = {}
-	for _, expression in statement.expressions do
-		table.insert(expressions, expression)
-		local call = utils.isExprCall(expression)
-		if call then
-			for _, argument in call.arguments do
-				table.insert(expressions, argument)
-			end
+	local valueUses: { [syntax.CstLocal]: true } = {}
+	query.findAllFromRoot(cst, utils.isExprLocal):forEach(function(reference)
+		if not callees[reference] then
+			valueUses[reference["local"]] = true
 		end
-	end
-
-	for _, expression in expressions do
-		local exported = utils.isExprLocal(expression)
-		if exported then
-			exports[exported["local"]] = true
-		end
-		local exportTable = utils.isExprTable(expression)
-		if exportTable then
-			for _, entry in exportTable.entries do
-				local value = utils.isExprLocal(entry.value)
-				if value then
-					exports[value["local"]] = true
-				end
-			end
-		end
-	end
-	return exports
+	end)
+	return valueUses
 end
 
 --[[
 	Flags constructor functions: local functions whose whole body returns a
 	table, like `local function member(name) return { source = name } end`. A
-	function like that only names a shape, and every caller has to look it up to see the
-	table it gets back. Writing the table where it's used shows that shape in
-	place, and a type can still name it.
+	function like that only names a shape, and every caller has to look it up
+	to see the table it gets back. Writing the table where it's used shows that
+	shape in place, and a type can still name it.
 
-	A function the module returns is its API, so it's left alone. So are
-	functions passed as arguments or stored in table fields, since a caller
-	such as `useMemo` or a module's `M.new` decides their shape.
+	Only functions the file calls and never uses any other way are flagged. A
+	function the module exports, passes as a callback, or stores in a table is
+	needed as a function. Function expressions that aren't assigned to a local,
+	like `useMemo(function() ... end)` or `function M.new()`, aren't checked
+	either, since a caller or the module's API decides their shape.
 ]]
 local function lint(cst: syntax.CstStatBlock, sourcepath: path.Path?): { types.LintViolation }
-	local exports = collectExports(cst)
+	local valueUses = collectValueUses(cst)
 	local violations: { types.LintViolation } = {}
 
 	local function check(name: syntax.CstLocal, func: syntax.CstExprFunction, location: syntax.Span)
-		if exports[name] or getReturnedTable(func) == nil then
+		if valueUses[name] or getReturnedTable(func) == nil then
 			return
 		end
 		local violation: types.LintViolation = {
