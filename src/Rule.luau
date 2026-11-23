@@ -21,6 +21,7 @@ export type Rule =
 	| "no_alias_local"
 	| "no_any"
 	| "no_error_field"
+	| "no_manifest_function"
 	| "no_paren_truncation"
 	| "no_tonumber_cast"
 	| "prefer_annotation"
@@ -59,6 +60,7 @@ local Rule = table.freeze({
 	NoAliasLocal = "no_alias_local" :: "no_alias_local",
 	NoAny = "no_any" :: "no_any",
 	NoErrorField = "no_error_field" :: "no_error_field",
+	NoManifestFunction = "no_manifest_function" :: "no_manifest_function",
 	NoParenTruncation = "no_paren_truncation" :: "no_paren_truncation",
 	NoTonumberCast = "no_tonumber_cast" :: "no_tonumber_cast",
 	PreferAnnotation = "prefer_annotation" :: "prefer_annotation",

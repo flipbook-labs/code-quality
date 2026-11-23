@@ -143,24 +143,25 @@ These Selene lints have no rule here:
 
 ### Style
 
-| Rule                        | What it asks for                                                                                   |
-| --------------------------- | -------------------------------------------------------------------------------------------------- |
-| `annotate_nil_local`        | An annotation on locals that start as `nil`                                                        |
-| `explicit_instantiation`    | `useState<<string?>>(nil)` instead of casting a literal argument, as in `useState(nil :: string?)` |
-| `function_type_param_names` | Named parameters in function types: `(storyModule: ModuleScript) -> ()`                            |
-| `inline_table`              | One entry per line once a table or table type has more than three entries, or any returned table   |
-| `no_alias_local`            | Reading `props.foo` where it's used instead of copying it into `local foo`                         |
-| `no_any`                    | `unknown` instead of `any`                                                                         |
-| `no_error_field`            | Error fields named `err` or `problem`, not `error`                                                 |
-| `no_paren_truncation`       | A local that captures a call's first return value instead of `(f())`                               |
-| `no_tonumber_cast`          | A `nil` check on `tonumber`'s result instead of a cast like `tonumber(s) :: number`                |
-| `prefer_annotation`         | `local items: { Item } = {}` instead of `local items = {} :: { Item }`                             |
-| `prefer_block_comment`      | One `--[[ ]]` block instead of a run of four or more `--` lines                                    |
-| `prefer_generic_iteration`  | `for k, v in t` instead of `pairs(t)` or `ipairs(t)`                                               |
-| `redundant_path_conversion` | `fs.exists(file)` instead of `fs.exists(tostring(file))` when `file` is visibly a `Path`           |
-| `string_method_call`        | `value:find(...)` instead of `string.find(value, ...)`                                             |
-| `string_union_enum`         | A frozen table of named constants alongside an exported union of three or more string literals     |
-| `tostring_in_interpolation` | `` `got {value}` `` instead of `` `got {tostring(value)}` ``                                       |
+| Rule                        | What it asks for                                                                                     |
+| --------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `annotate_nil_local`        | An annotation on locals that start as `nil`                                                          |
+| `explicit_instantiation`    | `useState<<string?>>(nil)` instead of casting a literal argument, as in `useState(nil :: string?)`   |
+| `function_type_param_names` | Named parameters in function types: `(storyModule: ModuleScript) -> ()`                              |
+| `inline_table`              | One entry per line once a table or table type has more than three entries, or any returned table     |
+| `no_alias_local`            | Reading `props.foo` where it's used instead of copying it into `local foo`                           |
+| `no_any`                    | `unknown` instead of `any`                                                                           |
+| `no_error_field`            | Error fields named `err` or `problem`, not `error`                                                   |
+| `no_manifest_function`      | Entries written out in full in a Lute manifest like `pkg.luau` instead of built by a helper function |
+| `no_paren_truncation`       | A local that captures a call's first return value instead of `(f())`                                 |
+| `no_tonumber_cast`          | A `nil` check on `tonumber`'s result instead of a cast like `tonumber(s) :: number`                  |
+| `prefer_annotation`         | `local items: { Item } = {}` instead of `local items = {} :: { Item }`                               |
+| `prefer_block_comment`      | One `--[[ ]]` block instead of a run of four or more `--` lines                                      |
+| `prefer_generic_iteration`  | `for k, v in t` instead of `pairs(t)` or `ipairs(t)`                                                 |
+| `redundant_path_conversion` | `fs.exists(file)` instead of `fs.exists(tostring(file))` when `file` is visibly a `Path`             |
+| `string_method_call`        | `value:find(...)` instead of `string.find(value, ...)`                                               |
+| `string_union_enum`         | A frozen table of named constants alongside an exported union of three or more string literals       |
+| `tostring_in_interpolation` | `` `got {value}` `` instead of `` `got {tostring(value)}` ``                                         |
 
 Casting a table to `{ unknown }` or `{ any }`, as React dependency arrays often do, widens it rather than setting a type parameter, so `explicit_instantiation` allows it. `explicit_instantiation` also flags a cast on the result of a call whose only argument is a table constructor. It asks for `table.freeze<<Metrics>>({ ... })` instead of `table.freeze({ ... }) :: Metrics`. It needs StyLua's `syntax = "Luau"` setting, since StyLua can't parse `f<<T>>()` without it.
 
