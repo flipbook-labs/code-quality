@@ -21,6 +21,25 @@ local function getReturnedTable(func: syntax.CstExprFunction): syntax.CstExprTab
 	return utils.isExprTable(statement.expressions[1])
 end
 
+-- Looks through what can wrap a call's target without changing which function
+-- runs: type arguments as in `box<<number>>(1)`, parentheses, and casts.
+local function unwrapCallee(expr: syntax.CstExpr): syntax.CstExpr
+	while true do
+		local instantiate = utils.isExprInstantiate(expr)
+		local group = utils.isExprGroup(expr)
+		local cast = utils.isExprTypeAssertion(expr)
+		if instantiate then
+			expr = instantiate.expr
+		elseif group then
+			expr = group.expression
+		elseif cast then
+			expr = cast.operand
+		else
+			return expr
+		end
+	end
+end
+
 --[[
 	Collects the locals the file uses as values rather than only calling them,
 	as in `return create`, `{ new = create }`, or `useMemo(create, {})`. A
@@ -30,7 +49,7 @@ end
 local function collectValueUses(cst: syntax.CstStatBlock): { [syntax.CstLocal]: true }
 	local callees: { [syntax.CstExprLocal]: true } = {}
 	query.findAllFromRoot(cst, utils.isExprCall):forEach(function(call)
-		local callee = utils.isExprLocal(call.func)
+		local callee = utils.isExprLocal(unwrapCallee(call.func))
 		if callee then
 			callees[callee] = true
 		end

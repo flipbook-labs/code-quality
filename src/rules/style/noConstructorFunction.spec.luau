@@ -30,6 +30,18 @@ test.suite("no_constructor_function", function(suite)
 		)
 	end)
 
+	suite:case("flags a function called with type arguments, parentheses, or a cast", function(assert)
+		local source = table.concat({
+			"local function box<T>(value: T)",
+			"\treturn { value = value }",
+			"end",
+			"local a = box<<number>>(1)",
+			"local b = (box)(2)",
+			"local c = (box :: (number) -> { value: number })(3)",
+		}, "\n")
+		assert.eq(#lintSource(rule, source), 1)
+	end)
+
 	suite:case("leaves a function used as a value alone", function(assert)
 		local exported = "local function create()\n\treturn {}\nend\n\nlocal M = { new = create }\n\nreturn M"
 		assert.eq(#lintSource(rule, exported), 0)
