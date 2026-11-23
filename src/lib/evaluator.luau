@@ -30,27 +30,6 @@ local NIL: Value = { kind = "nil" }
 local FUNCTION: Value = { kind = "function" }
 local TABLE: Value = { kind = "table" }
 
-local function boolean(value: boolean): Value
-	return {
-		kind = "boolean",
-		value = value,
-	}
-end
-
-local function number(value: number): Value
-	return {
-		kind = "number",
-		value = value,
-	}
-end
-
-local function str(value: string): Value
-	return {
-		kind = "string",
-		value = value,
-	}
-end
-
 -- Whether `value` counts as true in a condition: `false` for `nil` and
 -- `false`, `true` for anything else, and `nil` when the value is unknown.
 local function isTruthy(value: Value): boolean?
@@ -99,18 +78,36 @@ local function evaluateEqual(left: Value, right: Value): Value
 	if left.kind == "unknown" or right.kind == "unknown" then
 		return UNKNOWN
 	elseif left.kind ~= right.kind then
-		return boolean(false)
+		return {
+			kind = "boolean",
+			value = false,
+		}
 	elseif left.kind == "nil" then
-		return boolean(true)
+		return {
+			kind = "boolean",
+			value = true,
+		}
 	elseif left.kind == "boolean" and right.kind == "boolean" then
-		return boolean(left.value == right.value)
+		return {
+			kind = "boolean",
+			value = left.value == right.value,
+		}
 	elseif left.kind == "number" and right.kind == "number" then
-		return boolean(left.value == right.value)
+		return {
+			kind = "boolean",
+			value = left.value == right.value,
+		}
 	elseif left.kind == "string" and right.kind == "string" then
-		return boolean(left.value == right.value)
+		return {
+			kind = "boolean",
+			value = left.value == right.value,
+		}
 	end
 	-- Two constructors always make two different functions or tables.
-	return boolean(false)
+	return {
+		kind = "boolean",
+		value = false,
+	}
 end
 
 local ARITHMETIC: { [string]: (left: number, right: number) -> number } = {
@@ -173,13 +170,13 @@ local function evaluateBinary(operator: string, expr: syntax.CstExprBinary): Val
 		return evaluateEqual(left, right)
 	elseif operator == "~=" then
 		local equal = evaluateEqual(left, right)
-		return if equal.kind == "boolean" then boolean(not equal.value) else UNKNOWN
+		return if equal.kind == "boolean" then { kind = "boolean", value = not equal.value } else UNKNOWN
 	end
 
 	local arithmetic = ARITHMETIC[operator]
 	if arithmetic then
 		local a, b = toNumber(left), toNumber(right)
-		return if a and b then number(arithmetic(a, b)) else UNKNOWN
+		return if a and b then { kind = "number", value = arithmetic(a, b) } else UNKNOWN
 	end
 
 	if operator == ".." then
@@ -191,13 +188,19 @@ local function evaluateBinary(operator: string, expr: syntax.CstExprBinary): Val
 			then tostring(right.value)
 			elseif right.kind == "string" then right.value
 			else nil
-		return if a and b then str(a .. b) else UNKNOWN
+		return if a and b then { kind = "string", value = a .. b } else UNKNOWN
 	end
 
 	if left.kind == "number" and right.kind == "number" then
-		return boolean(compare(operator, left.value, right.value))
+		return {
+			kind = "boolean",
+			value = compare(operator, left.value, right.value),
+		}
 	elseif left.kind == "string" and right.kind == "string" then
-		return boolean(compare(operator, left.value, right.value))
+		return {
+			kind = "boolean",
+			value = compare(operator, left.value, right.value),
+		}
 	end
 	return UNKNOWN
 end
@@ -206,12 +209,15 @@ local function evaluateUnary(operator: string, expr: syntax.CstExprUnary): Value
 	local operand = evaluate(expr.operand)
 	if operator == "not" then
 		local truthy = isTruthy(operand)
-		return if truthy == nil then UNKNOWN else boolean(not truthy)
+		return if truthy == nil then UNKNOWN else { kind = "boolean", value = not truthy }
 	elseif operator == "-" then
 		local value = toNumber(operand)
-		return if value then number(-value) else UNKNOWN
+		return if value then { kind = "number", value = -value } else UNKNOWN
 	elseif operand.kind == "string" then
-		return number(#operand.value)
+		return {
+			kind = "number",
+			value = #operand.value,
+		}
 	end
 	return UNKNOWN
 end
@@ -264,19 +270,28 @@ local function evaluateInterpString(expr: syntax.CstExprInterpString): Value
 			end
 		end
 	end
-	return str(table.concat(parts))
+	return {
+		kind = "string",
+		value = table.concat(parts),
+	}
 end
 
 function evaluate(expr: syntax.CstExpr): Value
 	if expr.tag == "nil" then
 		return NIL
 	elseif expr.tag == "boolean" then
-		return boolean(expr.value)
+		return {
+			kind = "boolean",
+			value = expr.value,
+		}
 	elseif expr.tag == "number" then
-		return number(expr.value)
+		return {
+			kind = "number",
+			value = expr.value,
+		}
 	elseif expr.tag == "string" then
 		local value = stringLiteralValue(expr)
-		return if value then str(value) else UNKNOWN
+		return if value then { kind = "string", value = value } else UNKNOWN
 	elseif expr.tag == "function" then
 		return FUNCTION
 	elseif expr.tag == "table" then

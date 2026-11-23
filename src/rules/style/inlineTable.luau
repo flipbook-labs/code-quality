@@ -55,18 +55,18 @@ local function collectReturnedTables(cst: syntax.CstStatBlock): { [syntax.CstExp
 	return returned
 end
 
-local function createViolation(location: syntax.Span, message: string, sourcepath: path.Path?): types.LintViolation
-	return {
-		lintname = NAME,
-		location = location,
-		message = message,
-		severity = "warning",
-		sourcepath = sourcepath,
-	}
-end
-
 local function lint(cst: syntax.CstStatBlock, sourcepath: path.Path?): { types.LintViolation }
 	local violations: { types.LintViolation } = {}
+	local function report(location: syntax.Span, message: string)
+		local violation: types.LintViolation = {
+			lintname = NAME,
+			location = location,
+			message = message,
+			severity = "warning",
+			sourcepath = sourcepath,
+		}
+		table.insert(violations, violation)
+	end
 	local returned = collectReturnedTables(cst)
 
 	--[[
@@ -88,20 +88,16 @@ local function lint(cst: syntax.CstStatBlock, sourcepath: path.Path?): { types.L
 		-- `getReportLocation` searches the whole file, so it only runs for a
 		-- table that gets reported.
 		if message then
-			table.insert(violations, createViolation(getReportLocation(cst, tbl.location), message, sourcepath))
+			report(getReportLocation(cst, tbl.location), message)
 		end
 	end)
 
 	-- A table type nested in another is widened the same way.
 	query.findAllFromRoot(cst, utils.isTypeTable):forEach(function(tableType)
 		if isInline(tableType.location) and #tableType.entries > MAX_INLINE_ENTRIES then
-			table.insert(
-				violations,
-				createViolation(
-					getReportLocation(cst, tableType.location),
-					"Put each entry on its own line when a table type has more than three entries.",
-					sourcepath
-				)
+			report(
+				getReportLocation(cst, tableType.location),
+				"Put each entry on its own line when a table type has more than three entries."
 			)
 		end
 	end)
