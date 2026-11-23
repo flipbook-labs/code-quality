@@ -109,4 +109,28 @@ test.suite("lute lint", function(suite)
 			assert.strNotContains(output, "attempt to index nil")
 		end)
 	end
+
+	suite:case("reports a manifest function inside a table type", function(assert)
+		-- The rule only checks files named like a manifest, so this lints a real
+		-- `pkg.luau` in its own folder rather than a string.
+		local folder = path.join(system.tmpdir(), `no-manifest-function-{os.time()}-{math.random(1e9)}`)
+		fs.createDirectory(folder)
+		local manifestPath = path.join(folder, "pkg.luau")
+		fs.writeStringToFile(manifestPath, "type T = { f: typeof(function() end) }\nreturn {}")
+
+		local result = process.run({
+			"lute",
+			"lint",
+			"--no-default-lints",
+			"--rules",
+			"src/rules/style/noManifestFunction.luau",
+			path.format(manifestPath),
+		})
+		fs.remove(manifestPath)
+		fs.removeDirectory(folder)
+
+		local output = result.stdout .. result.stderr
+		assert.strContains(output, "warning[no_manifest_function]")
+		assert.strNotContains(output, "attempt to index nil")
+	end)
 end)

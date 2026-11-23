@@ -3,6 +3,7 @@ local query = require("@std/syntax/query")
 local syntax = require("@std/syntax")
 local utils = require("@std/syntax/utils")
 
+local getReportLocation = require("../../lib/getReportLocation")
 local types = require("../../types")
 
 local NAME = "no_manifest_function"
@@ -33,7 +34,7 @@ local function lint(cst: syntax.CstStatBlock, sourcepath: path.Path?): { types.L
 	query.findAllFromRoot(cst, utils.isExprFunction):forEach(function(func)
 		local violation: types.LintViolation = {
 			lintname = NAME,
-			location = func.location,
+			location = getReportLocation(cst, func.location),
 			message = "Write this manifest's entries out in full instead of building them with a function.",
 			severity = "warning",
 			sourcepath = sourcepath,
