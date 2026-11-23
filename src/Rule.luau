@@ -20,6 +20,7 @@ export type Rule =
 	| "must_use"
 	| "no_alias_local"
 	| "no_any"
+	| "no_constructor_function"
 	| "no_error_field"
 	| "no_paren_truncation"
 	| "no_tonumber_cast"
@@ -58,6 +59,7 @@ local Rule = table.freeze({
 	MustUse = "must_use" :: "must_use",
 	NoAliasLocal = "no_alias_local" :: "no_alias_local",
 	NoAny = "no_any" :: "no_any",
+	NoConstructorFunction = "no_constructor_function" :: "no_constructor_function",
 	NoErrorField = "no_error_field" :: "no_error_field",
 	NoParenTruncation = "no_paren_truncation" :: "no_paren_truncation",
 	NoTonumberCast = "no_tonumber_cast" :: "no_tonumber_cast",

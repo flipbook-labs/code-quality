@@ -109,4 +109,13 @@ test.suite("lute lint", function(suite)
 			assert.strNotContains(output, "attempt to index nil")
 		end)
 	end
+
+	suite:case("reports a constructor function inside a table type", function(assert)
+		local output = runLint(
+			"style/noConstructorFunction",
+			"type T = { f: typeof(function() local function make() return {} end return make() end) }"
+		)
+		assert.strContains(output, "warning[no_constructor_function]")
+		assert.strNotContains(output, "attempt to index nil")
+	end)
 end)

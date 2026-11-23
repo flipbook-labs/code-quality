@@ -151,6 +151,7 @@ These Selene lints have no rule here:
 | `inline_table`              | One entry per line once a table or table type has more than three entries, or any returned table   |
 | `no_alias_local`            | Reading `props.foo` where it's used instead of copying it into `local foo`                         |
 | `no_any`                    | `unknown` instead of `any`                                                                         |
+| `no_constructor_function`   | A table written where it's used instead of a local function that only returns it                   |
 | `no_error_field`            | Error fields named `err` or `problem`, not `error`                                                 |
 | `no_paren_truncation`       | A local that captures a call's first return value instead of `(f())`                               |
 | `no_tonumber_cast`          | A `nil` check on `tonumber`'s result instead of a cast like `tonumber(s) :: number`                |

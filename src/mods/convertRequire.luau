@@ -267,19 +267,18 @@ local function resolveRequirePath(requirer: string, requirePath: string): string
 	return join(dirname(modulePath), requirePath)
 end
 
--- The files Luau would try for a require that resolves to `target`.
-local function moduleCandidates(target: string): { string }
-	return {
-		`{target}.luau`,
-		`{target}.lua`,
-		`{target}/init.luau`,
-		`{target}/init.lua`,
-	}
-end
+-- The suffixes Luau tries on a require's target to find a module file, in
+-- order. `.lua` is still accepted, so a `.lua` module resolves too.
+local MODULE_SUFFIXES = {
+	".luau",
+	".lua",
+	"/init.luau",
+	"/init.lua",
+}
 
 local function findInstance(target: string): { string }?
-	for _, candidate in moduleCandidates(target) do
-		local instance = moduleByFile[candidate]
+	for _, suffix in MODULE_SUFFIXES do
+		local instance = moduleByFile[target .. suffix]
 		if instance then
 			return instance
 		end
@@ -291,8 +290,8 @@ local function existsOnDisk(target: string): boolean
 	if fs.exists(target) then
 		return true
 	end
-	for _, candidate in moduleCandidates(target) do
-		if fs.exists(candidate) then
+	for _, suffix in MODULE_SUFFIXES do
+		if fs.exists(target .. suffix) then
 			return true
 		end
 	end
