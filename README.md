@@ -146,6 +146,7 @@ These Selene lints have no rule here:
 | Rule                        | What it asks for                                                                                   |
 | --------------------------- | -------------------------------------------------------------------------------------------------- |
 | `annotate_nil_local`        | An annotation on locals that start as `nil`                                                        |
+| `comment_line_length`       | Comment lines wrapped to fit in 120 columns                                                        |
 | `explicit_instantiation`    | `useState<<string?>>(nil)` instead of casting a literal argument, as in `useState(nil :: string?)` |
 | `function_type_param_names` | Named parameters in function types: `(storyModule: ModuleScript) -> ()`                            |
 | `inline_table`              | One entry per line once a table or table type has more than three entries, or any returned table   |
@@ -168,6 +169,8 @@ Casting a table to `{ unknown }` or `{ any }`, as React dependency arrays often 
 `no_any`, `prefer_block_comment`, `redundant_path_conversion`, and `tostring_in_interpolation` come with fixes that `lute lint --auto-fix` applies.
 
 `prefer_block_comment` counts only lines with text, so a bare `--` between paragraphs doesn't count. Its `line_threshold` option sets how many lines of text flag a run, and defaults to `4`. Directives stay as `--` lines and split a run: `--!` lines, `---` doc comments, and `lute-lint-ignore`, `selene:`, and `stylua:` comments. A comment after a file's last statement isn't checked, since Lute doesn't pass it to rules.
+
+`comment_line_length` checks every line of `--` comments and `--[[ ]]` blocks, including doc comments, and never code or strings. It counts columns the way StyLua does: a tab is `indent_width` columns, which defaults to `4`, and a line exactly `column_width` wide passes. `column_width` defaults to `120`. Set both to match `stylua.toml` if it changes them. Every other character counts as one column, where StyLua counts bytes, so `é` is one column here. A line is only flagged when wrapping can fix it, so a single word too long for any line, such as a long URL, is left alone. A comment after a file's last statement isn't checked.
 
 A Lute script can name a rule with `CodeQuality.Rule`, such as `CodeQuality.Rule.NoAny` for `no_any`.
 

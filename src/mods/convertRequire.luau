@@ -41,7 +41,8 @@
 	example, after copying `src` to `dist`:
 
 	```sh
-	lute transform <package>/src/mods/convertRequire.luau dist -- --sourcemap sourcemap-darklua.json --sourceFolder src --buildFolder dist
+	lute transform <package>/src/mods/convertRequire.luau dist -- \
+		--sourcemap sourcemap-darklua.json --sourceFolder src --buildFolder dist
 	```
 
 	Darklua logs a warning and leaves a require alone when it can't resolve it.
