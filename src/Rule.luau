@@ -4,6 +4,7 @@
 export type Rule =
 	"annotate_nil_local"
 	| "bad_string_escape"
+	| "comment_line_length"
 	| "compare_nan"
 	| "deprecated"
 	| "empty_loop"
@@ -43,6 +44,7 @@ export type Rule =
 local Rule = table.freeze({
 	AnnotateNilLocal = "annotate_nil_local" :: "annotate_nil_local",
 	BadStringEscape = "bad_string_escape" :: "bad_string_escape",
+	CommentLineLength = "comment_line_length" :: "comment_line_length",
 	CompareNan = "compare_nan" :: "compare_nan",
 	Deprecated = "deprecated" :: "deprecated",
 	EmptyLoop = "empty_loop" :: "empty_loop",

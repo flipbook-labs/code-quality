@@ -17,7 +17,8 @@
 	`_G.__DEV__` with `false`:
 
 	```sh
-	lute transform <package>/src/mods/injectGlobalValue.luau dist -- --globals '{"BUILD_CHANNEL":{"env":"BUILD_CHANNEL","value":"dev"},"__DEV__":false}'
+	lute transform <package>/src/mods/injectGlobalValue.luau dist -- \
+		--globals '{"BUILD_CHANNEL":{"env":"BUILD_CHANNEL","value":"dev"},"__DEV__":false}'
 	```
 
 	As in darklua, `_G.NAME`, `_G["NAME"]`, and a bare global `NAME` are all
