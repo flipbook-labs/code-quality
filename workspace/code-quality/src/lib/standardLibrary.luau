@@ -28,19 +28,21 @@ export type DeprecatedParameter = {
 	message: string,
 }
 
-local function deprecation(path: string, message: string, replace: string?): Deprecation
-	return {
-		path = path,
-		message = message,
-		replace = replace,
-	}
-end
-
-local DEPRECATIONS: { Deprecation } = table.freeze({
-	deprecation("table.foreach", "use a for loop instead.", nil),
-	deprecation("table.foreachi", "use a for loop instead.", nil),
-	deprecation("table.getn", "`table.getn` has been superseded by #.", "#%1"),
-})
+local DEPRECATIONS: { Deprecation } = {
+	{
+		path = "table.foreach",
+		message = "use a for loop instead.",
+	},
+	{
+		path = "table.foreachi",
+		message = "use a for loop instead.",
+	},
+	{
+		path = "table.getn",
+		message = "`table.getn` has been superseded by #.",
+		replace = "#%1",
+	},
+}
 
 local DEPRECATED_PARAMETERS: { DeprecatedParameter } = table.freeze({
 	{
