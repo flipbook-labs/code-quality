@@ -7,6 +7,8 @@ rokit install
 lute setup
 ```
 
+The repository is a Lute package workspace. The root `pkg.luau` has no name or version, which makes it a virtual package, and lists each package under `workspace/` as a member. The CodeQuality package is the `workspace/code-quality` member, and the paths below are relative to that folder. The Lute scripts in `.lute/` stay at the root and work across every member.
+
 Run the checks:
 
 ```sh

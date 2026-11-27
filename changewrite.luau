@@ -4,7 +4,7 @@ return {
 	version = {
 		current = "0.8.0",
 		mirror = {
-			{ file = "pkg.luau" },
+			{ file = "workspace/code-quality/pkg.luau" },
 			{ file = "README.md", pattern = 'rev = "v([%d%.]+)"' },
 			{ file = "README.md", pattern = "@lpm/code%-quality@v([%d%.]+)" },
 		},

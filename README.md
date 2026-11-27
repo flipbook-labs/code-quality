@@ -11,12 +11,15 @@ Add CodeQuality to `pkg.luau` as a dev dependency:
 ```luau
 dev_dependencies = {
 	["code-quality"] = {
-		rev = "v0.8.0",
+		rev = "v0.9.0",
 		sourceKind = "github",
 		source = "https://github.com/flipbook-labs/code-quality",
+		target = "workspace/code-quality",
 	},
 },
 ```
+
+The package lives in the repository's `workspace/code-quality` folder, so `target` points there. Releases before v0.9.0 keep the package at the repository root, so leave `target` out when pinning one of them.
 
 Then run `lute pkg install --vendor`. That copies CodeQuality into a `.lpm` folder, and scripts require it from there.
 
@@ -25,7 +28,7 @@ Then run `lute pkg install --vendor`. That copies CodeQuality into a `.lpm` fold
 Lint a repo from a Lute script, such as `.lute/lint.luau`, and run it with `lute run lint`:
 
 ```luau
-local CodeQuality = require("@lpm/code-quality@v0.8.0")
+local CodeQuality = require("@lpm/code-quality@v0.9.0")
 
 CodeQuality.lint({ "src", ".lute" })
 ```
