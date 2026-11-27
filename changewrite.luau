@@ -2,7 +2,7 @@ return {
 	categories = { "Features", "Fixes", "Changes", "Internal" },
 	collapsed = { "Internal" },
 	version = {
-		current = "0.8.0",
+		current = "0.9.0",
 		mirror = {
 			{ file = "workspace/code-quality/pkg.luau" },
 			{ file = "README.md", pattern = 'rev = "v([%d%.]+)"' },

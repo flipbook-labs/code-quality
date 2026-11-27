@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.9.0
+
+> [!WARNING]
+> Action required: this release has breaking changes. Each one under [Breaking changes](#breaking-changes) says what changed.
+
+Breaking 1 · Features 2 · Internal 1
+
+### Breaking changes
+
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/flipbook-labs/code-quality/main/.changes/assets/kind-packaging-dark.svg" /><source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/flipbook-labs/code-quality/main/.changes/assets/kind-packaging-light.svg" /><img src="https://raw.githubusercontent.com/flipbook-labs/code-quality/main/.changes/assets/kind-packaging-light.png" alt="Packaging" height="18" align="texttop" /></picture> <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/flipbook-labs/code-quality/main/.changes/assets/flag-breaking-dark.svg" /><source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/flipbook-labs/code-quality/main/.changes/assets/flag-breaking-light.svg" /><img src="https://raw.githubusercontent.com/flipbook-labs/code-quality/main/.changes/assets/flag-breaking-light.png" alt="Breaking" height="18" align="texttop" /></picture> The package now lives in `workspace/code-quality`, so dependencies on it need `target = "workspace/code-quality"`. ([#52](https://github.com/flipbook-labs/code-quality/pull/52))
+
+### Features
+
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/flipbook-labs/code-quality/main/.changes/assets/kind-rules-dark.svg" /><source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/flipbook-labs/code-quality/main/.changes/assets/kind-rules-light.svg" /><img src="https://raw.githubusercontent.com/flipbook-labs/code-quality/main/.changes/assets/kind-rules-light.png" alt="Lint rules" height="18" align="texttop" /></picture> Add `no_constructor_function`, which flags local functions that only return a table. ([#61](https://github.com/flipbook-labs/code-quality/pull/61))
+
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/flipbook-labs/code-quality/main/.changes/assets/kind-rules-dark.svg" /><source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/flipbook-labs/code-quality/main/.changes/assets/kind-rules-light.svg" /><img src="https://raw.githubusercontent.com/flipbook-labs/code-quality/main/.changes/assets/kind-rules-light.png" alt="Lint rules" height="18" align="texttop" /></picture> Add `comment_line_length`, which flags comment lines longer than 120 columns. ([#62](https://github.com/flipbook-labs/code-quality/pull/62))
+
+### Internal
+
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/flipbook-labs/code-quality/main/.changes/assets/kind-tooling-dark.svg" /><source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/flipbook-labs/code-quality/main/.changes/assets/kind-tooling-light.svg" /><img src="https://raw.githubusercontent.com/flipbook-labs/code-quality/main/.changes/assets/kind-tooling-light.png" alt="Tooling" height="18" align="texttop" /></picture> Move to Changewrite v0.16.0. ([#61](https://github.com/flipbook-labs/code-quality/pull/61))
 
 ## v0.8.0
 
